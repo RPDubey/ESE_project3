@@ -8,7 +8,9 @@
 #ifndef SOURCE_COMMON_H_
 #define SOURCE_COMMON_H_
 
-//enum for return type of uart functions
+#define unsigned_byte uint8_t
+
+//enum for return type of functions
 typedef enum{
   Pass,
   Fail

@@ -10,6 +10,7 @@
 #include"systick.h"
 #include"circbuf.h"
 #include"uart.h"
+#include"logger.h"
 
 #define VERBOSE
 #define len 10
@@ -49,11 +50,15 @@ BOARD_BootClockRUN();
 //debug functionality
 #ifdef VERBOSE
 
-
-
+unsigned_byte src[] ={'0','1','2','3'};
+char str[] = {"Hello World"};
 UART_configure();
 unsigned_byte send_var = (unsigned_byte)'S';
 UART_send(&send_var);
+
+LOG_RAW_DATA(src,4);
+LOG_RAW_STRING(str);
+LOG_RAW_INT(1523);
 while(1);
 
 #endif

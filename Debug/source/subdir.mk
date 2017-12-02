@@ -5,7 +5,9 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../source/circbuf.c \
+../source/conversion.c \
 ../source/dma_memory.c \
+../source/logger.c \
 ../source/main.c \
 ../source/memory.c \
 ../source/systick.c \
@@ -13,7 +15,9 @@ C_SRCS += \
 
 OBJS += \
 ./source/circbuf.o \
+./source/conversion.o \
 ./source/dma_memory.o \
+./source/logger.o \
 ./source/main.o \
 ./source/memory.o \
 ./source/systick.o \
@@ -21,7 +25,9 @@ OBJS += \
 
 C_DEPS += \
 ./source/circbuf.d \
+./source/conversion.d \
 ./source/dma_memory.d \
+./source/logger.d \
 ./source/main.d \
 ./source/memory.d \
 ./source/systick.d \

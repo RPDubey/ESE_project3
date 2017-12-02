@@ -21,7 +21,7 @@ This file declares functions for implementing operations defined in uart.h
 
 
 
-UART_enum UART_configure(){
+return_enum UART_configure(){
 
 BOARD_InitDebugConsole();
 
@@ -37,14 +37,16 @@ BOARD_InitDebugConsole();
     return 0;
 }
 
-UART_enum UART_send(unsigned_byte* data_ptr){
+return_enum UART_send(unsigned_byte* data_ptr){
 
 	while(!(UART0->S1 & UART0_S1_TDRE_MASK));//wait until Tx Data register is empty
 	UART0->D = *data_ptr;
      return 0;
 }
 
-UART_enum UART_send_n(unsigned_byte* data_ptr,size_t num_bytes){
+return_enum UART_send_n(unsigned_byte* data_ptr,size_t num_bytes){
+
+	if(data_ptr == NULL) return (return_enum)Fail;
 
 	while(num_bytes){
 
@@ -56,7 +58,7 @@ UART_enum UART_send_n(unsigned_byte* data_ptr,size_t num_bytes){
 	return 0;
 }
 
-UART_enum UART_receive(unsigned_byte* data_ptr){
+return_enum UART_receive(unsigned_byte* data_ptr){
 
 while (!(UART0->S1 & UART0_S1_RDRF_MASK));//wait until Rx data register is full
 *data_ptr = UART0->D;
@@ -64,7 +66,7 @@ return 0;
 }
 
 
-UART_enum UART_receive_n(unsigned_byte* data_ptr,size_t num_bytes){
+return_enum UART_receive_n(unsigned_byte* data_ptr,size_t num_bytes){
 	while(num_bytes){
 
 		while (!(UART0->S1 & UART0_S1_RDRF_MASK));//wait until Rx data register is full

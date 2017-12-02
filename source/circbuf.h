@@ -14,7 +14,8 @@ circbuf.c
 #ifndef FILE_CIRCBUF
 #define FILE_CIRCBUF
 
-#define unsigned_byte uint8_t
+#include "common.h"
+#include <stdlib.h>
 
 typedef struct{
   unsigned_byte* buf_ptr;  //points to begining of buffer in memory

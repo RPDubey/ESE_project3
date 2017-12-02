@@ -29,7 +29,7 @@ Takes a C string, logs it out through UART to terminal
 @param:none
 @return:return_enum
 *************************************************************************/
-return_enum log_string(char**);
+return_enum log_string(char*);
 
 /*************************************************************************
 @brief:wrapper for log_string()
@@ -38,7 +38,7 @@ Takes a C string, logs it out through UART to terminal
 @param:none
 @return:return_enum
 *************************************************************************/
-return_enum LOG_RAW_STRING(char**);
+return_enum LOG_RAW_STRING(char*);
 
 
 

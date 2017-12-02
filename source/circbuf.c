@@ -12,6 +12,8 @@ circbuf.h
 # include <stdlib.h>
 # include "circbuf.h"
 # include <stdio.h>
+
+
 CB_enum CB_init(CB_t* CB_ptr, size_t CB_size ){
 
   if(CB_ptr == NULL || CB_size == 0) return (CB_enum)Argument_Error;
