@@ -33,4 +33,5 @@ source \
 drivers \
 board \
 CMSIS \
+.metadata/.plugins/org.eclipse.cdt.make.core \
 

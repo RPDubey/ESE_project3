@@ -4,22 +4,28 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../source/circbuf.c \
 ../source/dma_memory.c \
 ../source/main.c \
 ../source/memory.c \
-../source/systick.c 
+../source/systick.c \
+../source/uart.c 
 
 OBJS += \
+./source/circbuf.o \
 ./source/dma_memory.o \
 ./source/main.o \
 ./source/memory.o \
-./source/systick.o 
+./source/systick.o \
+./source/uart.o 
 
 C_DEPS += \
+./source/circbuf.d \
 ./source/dma_memory.d \
 ./source/main.d \
 ./source/memory.d \
-./source/systick.d 
+./source/systick.d \
+./source/uart.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

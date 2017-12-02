@@ -14,6 +14,7 @@ RM := rm -rf
 -include drivers/subdir.mk
 -include board/subdir.mk
 -include CMSIS/subdir.mk
+-include .metadata/.plugins/org.eclipse.cdt.make.core/subdir.mk
 -include subdir.mk
 -include objects.mk
 
