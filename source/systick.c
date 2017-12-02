@@ -1,9 +1,20 @@
+/*******************************************************************************
+@file:systick.c
+@brief:function declaration for systick configuration
+
+This file declares systick config function
+to another
+@author:Ravi Dubey
+@date:12/1/2017
+*******************************************************************************/
+
 #include<stdint.h>
 #include"systick.h"
 #include<MKL25Z4.h>
 
 void Systick_config(){
 usec_count = 0;
+
 #define SysTick_Enable_Mask      (1UL)  //enable systick
 #define SysTick_Exception_Mask   (1UL << 1) //raise exception on overflow
 #define Processor_ClkSrc         (1UL << 2) //48 MHz processor clock

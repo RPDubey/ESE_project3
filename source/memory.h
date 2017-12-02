@@ -16,10 +16,6 @@ memory.c
 #include <stddef.h>
 
 
-void memset_dma(void);
-
-
-
 /*******************************************************************************
 @brief:Moves data from source memory location to destination
 
