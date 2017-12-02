@@ -16,23 +16,8 @@ circbuf.c
 
 #include "common.h"
 #include <stdlib.h>
+#include"logger.h"
 
-typedef struct{
-  unsigned_byte* buf_ptr;  //points to begining of buffer in memory
-  unsigned_byte* head;     // where to add item
-  unsigned_byte* tail;     //where to pop item
-  size_t size;    //buffer size
-  size_t count;   //current number of items on the buffer
-  unsigned_byte* buf_top_ptr; //points to the end of buffer in memory
-}CB_t;
-
-typedef enum{
-  Success ,
-  Buffer_Full,
-  Buffer_Empty,
-  Null_Error,
-  Argument_Error
-}CB_enum;
 
 
 /*******************************************************************************
@@ -42,7 +27,7 @@ the circulr buffer and adds the data to this CB.
 @param:Pointer to CB, pointer to data to be added to this CB
 @return:CB_enum enumaration that specifies success failure etc.
 *******************************************************************************/
-CB_enum CB_buffer_add_item( CB_t* , unsigned_byte );
+CB_enum CB_buffer_add_item( CB_t* , CB_data_type );
 
 
 /*******************************************************************************
@@ -52,7 +37,7 @@ removed and the variable in which the removed data has to be stored.
 @param:Pointer to CB, pointer to the variable where popped data has to be saved
 @return:CB_enum enumaration that specifies success failure etc.
 *******************************************************************************/
-CB_enum CB_buffer_remove_item(CB_t* , unsigned_byte*);
+CB_enum CB_buffer_remove_item(CB_t* , CB_data_type*);
 
 
 /*******************************************************************************
@@ -82,7 +67,7 @@ into and  pointer where this data will be stored.
 the data has to be stored.
 @return:CB_enum enumaration that specifies success failure etc.
 *******************************************************************************/
-CB_enum CB_peek(CB_t* ,size_t, unsigned_byte* );
+CB_enum CB_peek(CB_t* ,size_t, CB_data_type* );
 
 
 

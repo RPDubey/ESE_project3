@@ -8,6 +8,7 @@ C_SRCS += \
 ../source/conversion.c \
 ../source/dma_memory.c \
 ../source/logger.c \
+../source/logger_que.c \
 ../source/main.c \
 ../source/memory.c \
 ../source/systick.c \
@@ -18,6 +19,7 @@ OBJS += \
 ./source/conversion.o \
 ./source/dma_memory.o \
 ./source/logger.o \
+./source/logger_que.o \
 ./source/main.o \
 ./source/memory.o \
 ./source/systick.o \
@@ -28,6 +30,7 @@ C_DEPS += \
 ./source/conversion.d \
 ./source/dma_memory.d \
 ./source/logger.d \
+./source/logger_que.d \
 ./source/main.d \
 ./source/memory.d \
 ./source/systick.d \

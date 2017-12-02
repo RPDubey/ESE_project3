@@ -6,8 +6,8 @@ source/main.o: ../source/main.c ../board/pin_mux.c \
  ../drivers/fsl_common.h ../drivers/fsl_port.h ../board/pin_mux.h \
  ../board/clock_config.c ../drivers/fsl_smc.h ../board/clock_config.h \
  ../source/dma_memory.h ../source/memory.h ../source/systick.h \
- ../source/circbuf.h ../source/common.h ../source/uart.h \
- ../source/logger.h
+ ../source/circbuf.h ../source/common.h ../source/logger.h \
+ ../source/uart.h ../source/logger_que.h
 
 ../board/pin_mux.c:
 
@@ -53,6 +53,8 @@ source/main.o: ../source/main.c ../board/pin_mux.c \
 
 ../source/common.h:
 
+../source/logger.h:
+
 ../source/uart.h:
 
-../source/logger.h:
+../source/logger_que.h:

@@ -10,7 +10,7 @@
 #include"systick.h"
 #include"circbuf.h"
 #include"uart.h"
-#include"logger.h"
+#include"logger_que.h"
 
 #define VERBOSE
 #define len 10

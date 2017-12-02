@@ -19,14 +19,14 @@ CB_enum CB_init(CB_t* CB_ptr, size_t CB_size ){
   if(CB_ptr == NULL || CB_size == 0) return (CB_enum)Argument_Error;
 
   CB_enum return_val;
-  CB_ptr->buf_ptr =(unsigned_byte*)malloc(CB_size);
+  CB_ptr->buf_ptr =(CB_data_type*)malloc(CB_size);
   return_val = (CB_ptr->buf_ptr == NULL)? Null_Error:Success ;
   if(return_val != Success) return return_val;
   CB_ptr->size = CB_size;
   CB_ptr->head = CB_ptr->buf_ptr ;
   CB_ptr->tail = CB_ptr->buf_ptr ;
   CB_ptr->count = 0;
-  CB_ptr->buf_top_ptr = (CB_ptr->buf_ptr + CB_size * sizeof(unsigned_byte) - 1);
+  CB_ptr->buf_top_ptr = (CB_ptr->buf_ptr + CB_size * sizeof(CB_data_type) - 1);
   return return_val;
 
 }
@@ -42,7 +42,7 @@ CB_enum CB_destroy(CB_t* CB_ptr){
 }
 
 
-CB_enum CB_buffer_add_item( CB_t* CB_ptr , unsigned_byte data ){
+CB_enum CB_buffer_add_item( CB_t* CB_ptr , CB_data_type data ){
 
   if(CB_ptr == NULL ) return (CB_enum)Argument_Error;
  //if que not full, then move head to position where data has to be stored
@@ -67,7 +67,7 @@ CB_enum CB_buffer_add_item( CB_t* CB_ptr , unsigned_byte data ){
 
 
 
-CB_enum CB_buffer_remove_item(CB_t* CB_ptr , unsigned_byte* data ){
+CB_enum CB_buffer_remove_item(CB_t* CB_ptr , CB_data_type* data ){
   if(CB_ptr == NULL || data == NULL) return (CB_enum)Argument_Error;
  //If the buffer is not empty,then move tail to the next location and
  //read the data out at the new location.
@@ -89,19 +89,20 @@ CB_enum CB_buffer_remove_item(CB_t* CB_ptr , unsigned_byte* data ){
 CB_enum CB_is_full(CB_t* CB_ptr){
   if(CB_ptr == NULL ) return (CB_enum)Argument_Error;
   if(CB_ptr->count >= CB_ptr->size ) return (CB_enum)Buffer_Full;
-
+  return 0;
 }
 
 
 CB_enum CB_is_empty(CB_t* CB_ptr){
   if(CB_ptr == NULL ) return (CB_enum)Argument_Error;
   if(CB_ptr->count == 0 ) return (CB_enum)Buffer_Empty;
+  return 0;
 };
 
 
-CB_enum CB_peek(CB_t* CB_ptr ,size_t loc, unsigned_byte* data ){
+CB_enum CB_peek(CB_t* CB_ptr ,size_t loc, CB_data_type* data ){
   if(CB_ptr == NULL || data == NULL) return (CB_enum)Argument_Error;
-  unsigned_byte* temp_head = CB_ptr->head;
+  CB_data_type* temp_head = CB_ptr->head;
   while(loc != 0){
     if( temp_head ==  CB_ptr->buf_top_ptr ){
       temp_head = CB_ptr->buf_ptr;
