@@ -11,15 +11,34 @@ This file provides definitions for RTC related functions declared in RTC.h
 
 #include<stdlib.h>
 #include"RTC.h"
-
+#include"logger_que.h"
+#include"common.h"
+#include"project3.c"
 volatile uint32_t sec_count = 0;
 
+
+extern LQ_t* LQ_buf_ptr;
+
+log_data_struct heartbeat_data;
+uint8_t heartbeat_flag;
 void RTC_config(void){
+
+	//static payload for HEARBEAT
+	heartbeat_data.ID = HEARTBEAT;
+	heartbeat_data.log_length = 0;
+	heartbeat_data.payload_start_ptr = NULL;
+	heartbeat_data.checksum = 0;
 
 	NVIC_EnableIRQ(RTC_Seconds_IRQn );
 
 	SIM->SOPT1 |= (1UL<<18) | (1UL<<19) ; //select 1KHZ osc LPO for rtc counter
 	SIM_SCGC6 |= SIM_SCGC6_RTC_MASK;//enable software access and interrupts to RTC
+
+	uint32_t j =48000;
+	while(j){
+		j--;
+	}
+
 
 	RTC_LR = 0x000000FF ;// unlock write access to registers
 	RTC_CR =  0X00000004;//NOn supervisor mode acces enabled. rest zero
@@ -39,4 +58,8 @@ void RTC_Seconds_IRQHandler(void)
 	RTC_TPR = 0x00007FFF-999 ;
 	RTC_SR  |=(1UL<<4);   // enable counter
 	sec_count++;
+    heartbeat_data.time_sec = sec_count;
+	//heartbeat_flag = 1;
+    LQ_buffer_add_item(LQ_buf_ptr,heartbeat_data);
+
 }

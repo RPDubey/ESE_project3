@@ -60,10 +60,10 @@ printf("Source and Destination are same\n" );
 
  temp_ptr = (uint8_t*)malloc(length );
 
- //enable clock for dma
- 	SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
- //enable clock for dmaMux
- 	SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
+// //enable clock for dma
+// 	SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
+// //enable clock for dmaMux
+// 	SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
 
  /*
  Normal mode - DMAMUX is transparent

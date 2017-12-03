@@ -10,6 +10,18 @@
 #include<stdlib.h>
 #include<stdint.h>
 
+#define FRDM
+
+#ifdef FRDM
+#define START_CRITICAL() __disable_irq()
+#define END_CRITICAL()  __enable_irq()
+#endif
+
+#ifdef BBB
+#define START_CRITICAL()  __NOP()
+#define END_CRITICAL __NOP()
+#endif
+
 //enum for return type of functions
 typedef enum{
   Pass,
@@ -39,11 +51,12 @@ typedef enum{
 }LOG_ID;
 
 typedef struct{
-LOG_ID ID;
-//Time stamp
-size_t log_length;
-//size_t payload;//payload
-//checksum
+uint32_t time_sec;//Time stamp in second elapsed
+size_t log_length;//length of payload
+uint8_t* payload_start_ptr;//pointer to payload
+uint8_t checksum;//checksum
+LOG_ID ID;//type of log
+
 }log_data_struct;
 
 #define unsigned_byte uint8_t

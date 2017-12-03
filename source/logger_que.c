@@ -50,16 +50,18 @@ CB_enum LQ_buffer_add_item( LQ_t* LQ_ptr , log_data_struct data ){
 
   if(LQ_ptr->count < LQ_ptr->size ){
 
-    if(LQ_ptr->head ==   LQ_ptr->buf_top_ptr ){
-      LQ_ptr->head = LQ_ptr->buf_ptr;
+	START_CRITICAL();
+	if(LQ_ptr->head ==   LQ_ptr->buf_top_ptr ){
+	  LQ_ptr->head = LQ_ptr->buf_ptr;
 
-    }
-    else LQ_ptr->head ++ ;
+	}
+	else LQ_ptr->head ++ ;
 
-    *(LQ_ptr->head) = data;
-    LQ_ptr->count++;
+	*(LQ_ptr->head) = data;
+	LQ_ptr->count++;
 
-    return (CB_enum)Success ;
+	END_CRITICAL();
+	return (CB_enum)Success ;
   }
   else return (CB_enum)Buffer_Full ;
 }
@@ -71,32 +73,22 @@ CB_enum LQ_buffer_remove_item(LQ_t* LQ_ptr , log_data_struct* data ){
  //If the buffer is not empty,then move tail to the next location and
  //read the data out at the new location.
   if(LQ_ptr->count > 0 ){
-    if(LQ_ptr->tail ==   LQ_ptr->buf_top_ptr ){
-      LQ_ptr->tail = LQ_ptr->buf_ptr;
-    }
-    else LQ_ptr->tail ++;
-  *data = *LQ_ptr->tail;
-  LQ_ptr->count-- ;
+	START_CRITICAL();
+	{
+	if(LQ_ptr->tail ==   LQ_ptr->buf_top_ptr ){
+	LQ_ptr->tail = LQ_ptr->buf_ptr;
+	}
+	else LQ_ptr->tail ++;
+	*data = *LQ_ptr->tail;
+	LQ_ptr->count-- ;
+	}
+	END_CRITICAL();
 
   return (CB_enum)Success ;
   }
   else return (CB_enum)Buffer_Empty ;
 
 }
-
-
-CB_enum LQ_is_full(LQ_t* LQ_ptr){
-  if(LQ_ptr == NULL ) return (CB_enum)Argument_Error;
-  if(LQ_ptr->count >= LQ_ptr->size ) return (CB_enum)Buffer_Full;
-  return 0;
-}
-
-
-CB_enum LQ_is_empty(LQ_t* LQ_ptr){
-  if(LQ_ptr == NULL ) return (CB_enum)Argument_Error;
-  if(LQ_ptr->count == 0 ) return (CB_enum)Buffer_Empty;
-  return 0;
-};
 
 
 CB_enum LQ_peek(LQ_t* LQ_ptr ,size_t loc, log_data_struct* data ){
@@ -113,15 +105,15 @@ CB_enum LQ_peek(LQ_t* LQ_ptr ,size_t loc, log_data_struct* data ){
 return (CB_enum)Success;
 }
 
-void print_CB_enum(CB_enum return_val){
-
-  switch (return_val) {
-    case 0: printf("Success\n" );break;
-    case 1: printf("Buffer_Full\n" );break;
-    case 2: printf("Buffer_Empty\n" );break;
-    case 3: printf("Null_Error\n" );break;
-    case 4: printf("Argument_Error\n" );break;
-  }
-}
+//void print_CB_enum(CB_enum return_val){
+//
+//  switch (return_val) {
+//    case 0: printf("Success\n" );break;
+//    case 1: printf("Buffer_Full\n" );break;
+//    case 2: printf("Buffer_Empty\n" );break;
+//    case 3: printf("Null_Error\n" );break;
+//    case 4: printf("Argument_Error\n" );break;
+//  }
+//}
 
 
