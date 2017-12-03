@@ -27,7 +27,7 @@ the circulr buffer and adds the data to this CB.
 @param:Pointer to CB, pointer to data to be added to this CB
 @return:CB_enum enumaration that specifies success failure etc.
 *******************************************************************************/
-CB_enum CB_buffer_add_item( CB_t* , CB_data_type );
+CB_enum CB_buffer_add_item( CB_t* , unsigned_byte );
 
 
 /*******************************************************************************
@@ -37,7 +37,7 @@ removed and the variable in which the removed data has to be stored.
 @param:Pointer to CB, pointer to the variable where popped data has to be saved
 @return:CB_enum enumaration that specifies success failure etc.
 *******************************************************************************/
-CB_enum CB_buffer_remove_item(CB_t* , CB_data_type*);
+CB_enum CB_buffer_remove_item(CB_t* , unsigned_byte*);
 
 
 /*******************************************************************************
@@ -67,7 +67,7 @@ into and  pointer where this data will be stored.
 the data has to be stored.
 @return:CB_enum enumaration that specifies success failure etc.
 *******************************************************************************/
-CB_enum CB_peek(CB_t* ,size_t, CB_data_type* );
+CB_enum CB_peek(CB_t* ,size_t, unsigned_byte* );
 
 
 

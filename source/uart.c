@@ -23,7 +23,7 @@ This file declares functions for implementing operations defined in uart.h
 
 return_enum UART_configure(){
 
-BOARD_InitDebugConsole();
+//BOARD_InitDebugConsole();
 
 //EnableInterrupts;
 
