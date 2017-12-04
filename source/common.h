@@ -11,6 +11,8 @@
 #include<stdint.h>
 
 #define FRDM
+#define verbose
+
 
 #ifdef FRDM
 #define START_CRITICAL() __disable_irq()
@@ -21,6 +23,9 @@
 #define START_CRITICAL()  __NOP()
 #define END_CRITICAL __NOP()
 #endif
+
+uint8_t verbose_flag = 1;
+volatile uint32_t sec_count = 0;
 
 //enum for return type of functions
 typedef enum{

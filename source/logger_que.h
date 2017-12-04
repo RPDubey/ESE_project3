@@ -12,7 +12,8 @@ cirLQuf.c
 #ifndef SOURCE_LOGGER_QUE_H_
 #define SOURCE_LOGGER_QUE_H_
 
-#include"stdlib.h"
+#include<stdlib.h>
+
 #include"common.h"
 #include"core_cm0plus.h"
 
@@ -23,7 +24,31 @@ the circulr buffer and adds the data to this LQ.
 @param:Pointer to LQ, pointer to data to be added to this LQ
 @return:CB_enum enumaration that specifies success failure etc.
 *******************************************************************************/
-CB_enum LQ_buffer_add_item( LQ_t* , log_data_struct );
+__attribute__((always_inline)) __STATIC_INLINE CB_enum LQ_buffer_add_item( LQ_t* , log_data_struct );
+CB_enum LQ_buffer_add_item( LQ_t* LQ_ptr , log_data_struct data ){
+
+  if(LQ_ptr == NULL ) return (CB_enum)Argument_Error;
+ //if que not full, then move head to position where data has to be stored
+ //and write it there
+
+
+  if(LQ_ptr->count < LQ_ptr->size ){
+
+	START_CRITICAL();
+	if(LQ_ptr->head ==   LQ_ptr->buf_top_ptr ){
+	  LQ_ptr->head = LQ_ptr->buf_ptr;
+
+	}
+	else LQ_ptr->head ++ ;
+
+	*(LQ_ptr->head) = data;
+	LQ_ptr->count++;
+
+	END_CRITICAL();
+	return (CB_enum)Success ;
+  }
+  else return (CB_enum)Buffer_Full ;
+}
 
 
 /*******************************************************************************
@@ -33,7 +58,36 @@ removed and the variable in which the removed data has to be stored.
 @param:Pointer to LQ, pointer to the variable where popped data has to be saved
 @return:CB_enum enumaration that specifies success failure etc.
 *******************************************************************************/
-CB_enum LQ_buffer_remove_item(LQ_t* , log_data_struct*);
+__attribute__((always_inline)) __STATIC_INLINE CB_enum LQ_buffer_remove_item(LQ_t* , log_data_struct*);
+
+//function definition for static function
+CB_enum LQ_buffer_remove_item(LQ_t* LQ_ptr , log_data_struct* data ){
+  if(LQ_ptr == NULL || data == NULL) return (CB_enum)Argument_Error;
+
+  //If the buffer is not empty,then move tail to the next location and
+ //read the data out at the new location.
+  if(LQ_ptr->count > 0 ){
+	START_CRITICAL();
+	{
+	if(LQ_ptr->tail ==   LQ_ptr->buf_top_ptr ){
+	LQ_ptr->tail = LQ_ptr->buf_ptr;
+	}
+	else (LQ_ptr->tail) ++;
+
+	*( (log_data_struct*)data ) = *( (log_data_struct*)LQ_ptr->tail );
+
+	LQ_ptr->count-- ;
+	}
+	END_CRITICAL();
+
+
+	/*************sending data out to terminal************************/
+
+	return (CB_enum)Success ;
+  }
+  else return (CB_enum)Buffer_Empty ;
+
+}
 
 
 /*******************************************************************************
@@ -51,8 +105,6 @@ CB_enum LQ_is_full(LQ_t* LQ_ptr){
   return 0;
 }
 
-
-
 /*******************************************************************************
 @brief:Implements checking whether Logger buffer is Empty
 This function takes poiner tothe circulr buffer and checks for Empty state.
@@ -67,16 +119,16 @@ CB_enum LQ_is_empty(LQ_t* LQ_ptr){
   return 0;
 };
 
-/*******************************************************************************
-@brief:Implements seeking data in Logger buffer at particular location
-This function takes pointer to a Logger buffer, and position from head to peek
-into and  pointer where this data will be stored.
-@param:Pointer to LQ,position from head to seek into, pointer to adress where
-the data has to be stored.
-@return:CB_enum enumaration that specifies success failure etc.
-*******************************************************************************/
-CB_enum LQ_peek(LQ_t* ,size_t, log_data_struct* );
-
+///*******************************************************************************
+//@brief:Implements seeking data in Logger buffer at particular location
+//This function takes pointer to a Logger buffer, and position from head to peek
+//into and  pointer where this data will be stored.
+//@param:Pointer to LQ,position from head to seek into, pointer to adress where
+//the data has to be stored.
+//@return:CB_enum enumaration that specifies success failure etc.
+//*******************************************************************************/
+//CB_enum LQ_peek(LQ_t* ,size_t, log_data_struct* );
+//
 
 
 /*******************************************************************************
@@ -98,14 +150,6 @@ This function takes pointer to the Logger buffer to be destroyed
 *******************************************************************************/
 CB_enum LQ_destroy(LQ_t* LQ_ptr);
 
-
-/*******************************************************************************
-@brief:Implements printinting LQ functions returns
-This function takes return of type CB_enum
-@param:CB_enum type enum
-@return:void
-*******************************************************************************/
-void print_CB_enum(CB_enum);
 
 
 #endif /* SOURCE_LOGGER_QUE_H_ */
