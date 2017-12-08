@@ -20,17 +20,12 @@ This file provides definitions for RTC related functions declared in RTC.h
 extern LQ_t* LQ_buf_ptr;
 extern LQ_t* HB_buf_ptr;
 extern uint8_t verbose_flag;
-log_data_struct heartbeat_data;
+extern log_data_struct heartbeat_data;
 uint8_t heartbeat_flag;
 
 void RTC_config(void){
 
-	//static payload for HEARBEAT
-	heartbeat_data.ID = HEARTBEAT;
-	heartbeat_data.log_length = 0;
-	heartbeat_data.payload_start_ptr = NULL;
-	heartbeat_data.checksum = 0;
-
+	
 	NVIC_EnableIRQ(RTC_Seconds_IRQn );
 
 	SIM->SOPT1 |= (1UL<<18) | (1UL<<19) ; //select 1KHZ osc LPO for rtc counter

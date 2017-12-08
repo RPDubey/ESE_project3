@@ -396,7 +396,7 @@ return_enum LOG_RAW_DATA(unsigned_byte* src_ptr,size_t len){
 return_enum LOG_RAW_STRING(char* string_ptr){
 	if(string_ptr == NULL) return 1;
 
-#ifdef BBB
+#ifndef FRDM
 	printf("%s",string_ptr);
 	return 0;
 #endif
@@ -411,7 +411,7 @@ return_enum LOG_RAW_STRING(char* string_ptr){
 
 return_enum LOG_RAW_INT(int digit){
 
-#ifdef BBB
+#ifndef FRDM
 	printf("%d",digit);
 	return 0;
 #endif

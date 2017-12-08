@@ -22,11 +22,15 @@ This file initializes all the functionality for project3
 #endif
 
 #ifndef FRDM
-
+#include<unistd.h>
 #include<stdio.h>
 #include<string.h>
-
+#include<time.h>
+#include<signal.h>
 #endif
+
+
+
 
 #include"memory.h"
 #include"circbuf.h"
@@ -37,11 +41,20 @@ This file initializes all the functionality for project3
 #include<stdint.h>
 #include<stdlib.h>
 
+
+#define get_time() sec_count
 #define verbose
 
 
 uint8_t verbose_flag ;
 volatile uint32_t sec_count;
+
+#ifndef FRDM
+struct timespec start_time;
+struct timespec current_time;
+
+#endif
+
 
 //LQ_t*__attribute__((section (".buffer"))) LQ_buf_ptr;//Logger Que Buffer ptr
 //LQ_t*__attribute__((section (".buffer"))) HB_buf_ptr;//HeartBeatData Buffer ptr
@@ -66,6 +79,7 @@ void delay_us(size_t i){
 }
 
 
+
 void clock_configure(void){
 #ifdef FRDM
 	//BOARD_BootClockRUN();
@@ -78,13 +92,74 @@ void clock_configure(void){
 
 }
 
+log_data_struct heartbeat_data;
+//char HB[]="HB";
+
+
+#ifndef FRDM
+
+
+
+void handle(int sig) {
+
+signal(SIGALRM, SIG_IGN);        
+signal(SIGALRM,handle);
+alarm(1);
+sec_count++;
+heartbeat_data.time_sec = sec_count;
+
+
+
+#ifdef verbose
+if(verbose_flag == 1){
+LOG_RAW_STRING("\n");//curiously, logging dosent happen without this
+LOG_RAW_INT(heartbeat_data.ID);
+LOG_RAW_INT(heartbeat_data.time_sec);
+LOG_RAW_INT(heartbeat_data.log_length);}
+
+#endif
+
+
+}
+#endif
+
+
+
+void HeartBeat_config(){
+
+//static payload for HEARBEAT
+heartbeat_data.ID = HEARTBEAT;
+heartbeat_data.log_length = 0;
+heartbeat_data.payload_start_ptr = NULL;
+heartbeat_data.checksum = 0;
+
+#ifdef FRDM
+
+RTC_config();
+delay_us(1000);
+
+#endif
+
+
+#ifndef FRDM
+
+//clock_gettime(CLOCK_MONOTONIC,&start_time);
+signal(SIGALRM, handle);
+alarm(1);
+
+#endif
+
+}
+
+
 /*****************************************************************************/
 void project_3(void){
 
-
+//LOG_RAW_STRING(welcome);
 
 	verbose_flag = 1;
 	sec_count = 0;
+//printf("Project3\n");
 
 
 #ifdef FRDM
@@ -116,21 +191,15 @@ void project_3(void){
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+	HeartBeat_config();
 
 
-#ifdef FRDM
-
-	RTC_config();
-	delay_us(1000);
-
-#endif
+printf("project3\n");
 
 	data_log.ID = SYSTEM_INITIALIZED;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
-
-printf("Project3\n");
 
 
 //start DMA based profiling section
@@ -138,7 +207,7 @@ printf("Project3\n");
 
 	//start profiling
 	data_log.ID = PROFILING_STARTED;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
@@ -167,7 +236,7 @@ printf("Project3\n");
 	time_us = end_ticks - start_ticks;
 
 	data_log.ID = PROFILING_RESULT ;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 4;
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
@@ -180,7 +249,7 @@ printf("Project3\n");
 	time_us = end_ticks - start_ticks;
 
 	data_log.ID = PROFILING_RESULT ;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 4;
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
@@ -193,7 +262,7 @@ printf("Project3\n");
 	time_us = end_ticks - start_ticks;
 
 	data_log.ID = PROFILING_RESULT ;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 4;
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
@@ -206,7 +275,7 @@ printf("Project3\n");
 	time_us = end_ticks - start_ticks;
 
 	data_log.ID = PROFILING_RESULT ;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 4;
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
@@ -220,7 +289,7 @@ printf("Project3\n");
 	time_us = end_ticks - start_ticks;
 
 	data_log.ID = PROFILING_RESULT ;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 4;
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
@@ -233,7 +302,7 @@ printf("Project3\n");
 	time_us = end_ticks - start_ticks;
 
 	data_log.ID = PROFILING_RESULT ;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 4;
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
@@ -246,7 +315,7 @@ printf("Project3\n");
 	time_us = end_ticks - start_ticks;
 
 	data_log.ID = PROFILING_RESULT ;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 4;
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
@@ -259,7 +328,7 @@ printf("Project3\n");
 	time_us = end_ticks - start_ticks;
 
 	data_log.ID = PROFILING_RESULT ;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 4;
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
@@ -268,19 +337,18 @@ printf("Project3\n");
 
 	//profiling completed
 	data_log.ID = PROFILING_COMPLETED;
-	data_log.time_sec = sec_count;
+	data_log.time_sec = get_time();
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
 	//disable systick used for profiling
 	SysTick->CTRL &= ~(1UL)  ;
 #endif
+//Non DMA based profiling for memmove
 
 
 
-
-
-
+printf("Project3\n");
 
 
 	//Code for Nordic Chip read and write operations
