@@ -14,6 +14,9 @@
 #define verbose
 
 
+//#define nrf_transmit_enable()     __NOP  //GPIOC_PCOR |= (1UL<<9);
+//#define nrf_transmit_disable()		__NOP //GPIOC_PSOR |= (1UL<<9);
+
 #ifdef FRDM
 #define START_CRITICAL() __disable_irq()
 #define END_CRITICAL()  __enable_irq()
@@ -96,6 +99,12 @@ log_data_struct* buf_top_ptr; //points to the end of buffer in memory
 }LQ_t;
 
 
+void delay_us(size_t i){
+
+i = 48*i;
+while(i) i--;
+
+}
 
 
 

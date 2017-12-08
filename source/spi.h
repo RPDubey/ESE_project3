@@ -8,6 +8,7 @@
 #ifndef SOURCE_SPI_H_
 #define SOURCE_SPI_H_
 
+#include<stdlib.h>
 
 /********************************************************************************
 @brief:InitializestheSPIcontroller
@@ -25,7 +26,7 @@ Reads a single byte from the SPI
 bus@param:uint8_t type read byte
 @return:NONE
 ********************************************************************************/
-void SPI_read_byte(uint8_t byte);
+void SPI_read_byte(uint8_t *byte);
 
 /********************************************************************************
 @brief:oSends a singlebyte on the SPI bus
@@ -45,7 +46,7 @@ bytes to send.
 @param:uint8_t* pointer to byte array and it's length
 @return:NONE
 ********************************************************************************/
-void SPI_send_packet(uint8_* p,size_t length);
+void SPI_send_packet(uint8_t* p,size_t length);
 
 
 /********************************************************************************

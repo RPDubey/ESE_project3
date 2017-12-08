@@ -47,6 +47,8 @@ void project_3(void){
 	BOARD_InitDebugConsole();
 	clock_config();
 
+
+
 	UART_configure();
 	log_data_struct HB_data_out ;
 
