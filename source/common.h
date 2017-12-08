@@ -12,7 +12,7 @@
 
 #define verbose
 
-#define FRDM
+//#define FRDM
 
 
 //enum for return type of functions

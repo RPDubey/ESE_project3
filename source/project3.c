@@ -7,6 +7,7 @@ This file initializes all the functionality for project3
 @date:12/1/2017
  *******************************************************************************/
 
+#ifdef FRDM
 #include"pin_mux.c"
 #include"clock_config.c"
 #include "board.h"
@@ -18,6 +19,15 @@ This file initializes all the functionality for project3
 #include"nordic.h"
 #include"spi.h"
 #include"gpio.h"
+#endif
+
+#ifndef FRDM
+
+#include<stdio.h>
+#include<string.h>
+
+#endif
+
 #include"memory.h"
 #include"circbuf.h"
 #include"logger_que.h"
@@ -25,8 +35,6 @@ This file initializes all the functionality for project3
 #include"project3.h"
 
 #include<stdint.h>
-#include<stdio.h>
-#include<string.h>
 #include<stdlib.h>
 
 #define verbose
@@ -73,6 +81,8 @@ void clock_configure(void){
 /*****************************************************************************/
 void project_3(void){
 
+
+
 	verbose_flag = 1;
 	sec_count = 0;
 
@@ -107,6 +117,7 @@ void project_3(void){
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
 
+
 #ifdef FRDM
 
 	RTC_config();
@@ -119,6 +130,7 @@ void project_3(void){
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+printf("Project3\n");
 
 
 //start DMA based profiling section
