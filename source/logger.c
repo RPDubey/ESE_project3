@@ -414,14 +414,8 @@ return_enum LOG_RAW_INT(int digit){
 return_enum LOG_FLUSH(LQ_t* Buffer){
 #ifdef verbose
 if(verbose_flag==1) {
-#ifdef FRDM
-	return log_flush(Buffer);
-#endif
+return log_flush(Buffer);
 
-#ifdef BBB
-
-
-#endif
 }
 #endif
 return 1;
@@ -431,13 +425,9 @@ return 1;
 CB_enum LOG_ITEM(log_data_struct* data , LQ_t* Buffer){
 #ifdef verbose
 if(verbose_flag==1) {
-#ifdef FRDM
-	return log_item(data,Buffer);
-#endif
-
-#ifdef BBB
-#endif
+return log_item(data,Buffer);
 }
 #endif
+
 return 1;
 }
