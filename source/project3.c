@@ -24,7 +24,7 @@ This file initializes all the functionality for project3
 #include"common.h"
 #include"uart.h"
 
-#define VERBOSE
+#define verbose
 
 
 
@@ -37,19 +37,22 @@ log_data_struct* data_out;//this variable is used to pop data out and send over 
 
 log_data_struct *data_flush;
 
+
 void clock_config(void);
 void project_3(void);
 
 void project_3(void){
 
+#ifdef FRDM
 	BOARD_InitPins();
 //	BOARD_BootClockRUN();
 	BOARD_InitDebugConsole();
 	clock_config();
+UART_configure();
+#endif
 
 
 
-	UART_configure();
 	log_data_struct HB_data_out ;
 
 	log_data_struct data_log; //structure to store profiling data
@@ -70,13 +73,20 @@ void project_3(void){
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+
+#ifdef FRDM
+
 	RTC_config();
+
 	while( (LQ_is_empty(HB_buf_ptr) == Buffer_Empty ) );//wait till first second count
+
+	#endif
 
 	data_log.ID = SYSTEM_INITIALIZED;
 	data_log.time_sec = sec_count;
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
+
 
 
 	//start profiling section
@@ -221,6 +231,7 @@ void project_3(void){
 	//disable systick used for profiling
 	SysTick->CTRL &= ~(1UL)  ;
 
+
 #endif
 
 
@@ -244,6 +255,56 @@ void project_3(void){
 	free(HB_buf_ptr);
 //	free(command_CB);
 
+//Code for Nordic Chip
+#ifdef FRDM
+
+GPIO_nrf_init();
+
+SPI_init();
+
+delay_us(100);
+
+uint8_t read[10] ;
+uint8_t addr[5];
+uint8_t write_addr[5] ={1,2,3,4,5};
+
+read[0] = nrf_read_config();
+
+read[1] = nrf_read_status();
+
+nrf_write_config(0x01);
+
+read[2] = nrf_read_config();
+
+read[3] = nrf_read_rf_setup();
+
+nrf_write_rf_setup(0x01);
+
+read[4] = nrf_read_config();
+
+read[5] = nrf_read_rf_ch();
+
+nrf_write_rf_ch(0x01);
+
+read[6] = nrf_read_rf_ch();
+
+nrf_read_TX_ADDR(addr);
+
+nrf_write_TX_ADDR(write_addr);
+
+nrf_read_TX_ADDR(addr);
+
+read[0] = nrf_read_fifo_status();
+
+
+delay_us(1000);
+
+#endif
+
+
+
+
+
 }
 
 
@@ -258,7 +319,3 @@ void clock_config(void){
 
 
 }
-
-
-
-

@@ -17,6 +17,7 @@ This file declares functions for implementing operations defined in logger.h
 
 extern log_data_struct* data_out ;
 extern log_data_struct *data_flush;
+
 return_enum log_data(unsigned_byte* src_ptr, size_t len){
 
 	if(src_ptr == NULL) return (return_enum)Fail;
@@ -440,5 +441,3 @@ if(verbose_flag==1) {
 #endif
 return 1;
 }
-
-
