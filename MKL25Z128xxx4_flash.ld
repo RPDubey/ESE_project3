@@ -242,7 +242,7 @@ SECTIONS
     
   __BUFFER_START = . ;  					/* create symbol for start of section at current location */
    KEEP(*(.buffer))                         /* input section to be placed in output section .buffer */ 	
-   . += 0x1400 ;
+   . += 0x0400 ;
    
   __BUFFER_END = . ; /*  create symbol for end of section at current location + 512 bytes*/
  } > m_data

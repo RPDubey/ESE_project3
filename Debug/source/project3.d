@@ -1,4 +1,4 @@
-source/main.o: ../source/main.c ../source/project3.c ../board/pin_mux.c \
+source/project3.o: ../source/project3.c ../board/pin_mux.c \
  ../drivers/fsl_common.h ../CMSIS/fsl_device_registers.h \
  ../CMSIS/MKL25Z4.h ../CMSIS/core_cm0plus.h ../CMSIS/core_cmInstr.h \
  ../CMSIS/cmsis_gcc.h ../CMSIS/core_cmFunc.h ../CMSIS/system_MKL25Z4.h \
@@ -8,10 +8,7 @@ source/main.o: ../source/main.c ../source/project3.c ../board/pin_mux.c \
  ../board/board.h ../drivers/fsl_gpio.h ../source/dma_memory.h \
  ../source/memory.h ../source/systick.h ../source/circbuf.h \
  ../source/common.h ../source/logger.h ../CMSIS/core_cm0plus.h \
- ../source/uart.h ../source/logger_que.h ../source/RTC.h ../source/spi.h \
- ../source/gpio.h ../source/nordic.h
-
-../source/project3.c:
+ ../source/uart.h ../source/logger_que.h ../source/RTC.h
 
 ../board/pin_mux.c:
 
@@ -70,9 +67,3 @@ source/main.o: ../source/main.c ../source/project3.c ../board/pin_mux.c \
 ../source/logger_que.h:
 
 ../source/RTC.h:
-
-../source/spi.h:
-
-../source/gpio.h:
-
-../source/nordic.h:
