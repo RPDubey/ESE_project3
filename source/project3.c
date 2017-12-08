@@ -49,11 +49,6 @@ This file initializes all the functionality for project3
 uint8_t verbose_flag ;
 volatile uint32_t sec_count;
 
-#ifndef FRDM
-struct timespec start_time;
-struct timespec current_time;
-
-#endif
 
 
 //LQ_t*__attribute__((section (".buffer"))) LQ_buf_ptr;//Logger Que Buffer ptr
@@ -142,14 +137,13 @@ delay_us(1000);
 
 
 #ifndef FRDM
-
-//clock_gettime(CLOCK_MONOTONIC,&start_time);
 signal(SIGALRM, handle);
 alarm(1);
 
 #endif
 
 }
+
 
 
 /*****************************************************************************/
@@ -195,21 +189,21 @@ void project_3(void){
 
 
 printf("project3\n");
+LOG_RAW_STRING("\n");
 
 	data_log.ID = SYSTEM_INITIALIZED;
 	data_log.time_sec = get_time();
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-
-//start DMA based profiling section
-#ifdef FRDM
+LOG_RAW_STRING("\n");
 
 	//start profiling
 	data_log.ID = PROFILING_STARTED;
 	data_log.time_sec = get_time();
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
+LOG_RAW_STRING("\n");
 
 	//10 bytes
 	//memmove profiling
@@ -226,6 +220,14 @@ printf("project3\n");
 	volatile uint32_t start_ticks = 0;
 	volatile uint32_t end_ticks = 0;
 	volatile uint32_t time_us = 0;
+
+
+//Profiling for FRDM
+#ifdef FRDM
+
+//profiling variables
+
+//start DMA version profiling section
 
 	Systick_config();
 
@@ -335,20 +337,258 @@ printf("project3\n");
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
 
-	//profiling completed
-	data_log.ID = PROFILING_COMPLETED;
+
+//disable systick used for profiling
+	SysTick->CTRL &= ~(1UL)  ;
+
+#endif
+
+
+
+//Non DMA based profiling for memmove - library version
+
+	
+	start_ticks = get_precision_time();
+	memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
 	data_log.time_sec = get_time();
-	data_log.log_length = 0;
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-	//disable systick used for profiling
-	SysTick->CTRL &= ~(1UL)  ;
-#endif
-//Non DMA based profiling for memmove
+LOG_RAW_STRING("\n");
+
+	len = 1000;
+	start_ticks = get_precision_time();
+	memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 100;
+	start_ticks = get_precision_time();
+	memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 10;
+	start_ticks = get_precision_time();
+	memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	//memset profiling
+	len = 5000;
+	start_ticks = get_precision_time();
+	memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 1000;
+	start_ticks = get_precision_time();
+	memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
 
 
+LOG_RAW_STRING("\n");
+	len = 100;
+	start_ticks = get_precision_time();
+	memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
 
-printf("Project3\n");
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 10;
+	start_ticks = get_precision_time();
+	memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+LOG_RAW_STRING("\n");
+
+	
+
+
+//Non DMA based profiling for memmove - my version
+
+
+	len = 5000;
+	start_ticks = get_precision_time();
+	my_memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 1000;
+	start_ticks = get_precision_time();
+	my_memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 100;
+	start_ticks = get_precision_time();
+	my_memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 10;
+	start_ticks = get_precision_time();
+	my_memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+LOG_RAW_STRING("\n");
+	//memset profiling
+
+
+	len = 5000;
+	start_ticks = get_precision_time();
+	my_memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 1000;
+	start_ticks = get_precision_time();
+	my_memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 100;
+	start_ticks = get_precision_time();
+	my_memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+LOG_RAW_STRING("\n");
+	len = 10;
+	start_ticks = get_precision_time();
+	my_memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+LOG_RAW_STRING("\n");
+
+//profiling completed
+data_log.ID = PROFILING_COMPLETED;
+data_log.time_sec = get_time();
+data_log.log_length = 0;
+LOG_ITEM(&data_log,LQ_buf_ptr);
+
+
 
 
 	//Code for Nordic Chip read and write operations
