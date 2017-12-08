@@ -10,6 +10,7 @@ This file declares functions for SPI library
 #include"MKL25Z4.h"
 #include"spi.h"
 #include<stdlib.h>
+
 void SPI_init(){
 
 

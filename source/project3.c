@@ -23,7 +23,9 @@ This file initializes all the functionality for project3
 #include "RTC.h"
 #include"common.h"
 #include"uart.h"
-
+#include"nordic.h"
+#include"spi.h"
+#include"gpio.h"
 #define verbose
 
 
@@ -253,11 +255,13 @@ UART_configure();
 	free(LQ_buf_ptr);
 	free (data_out);
 	free(HB_buf_ptr);
-//	free(command_CB);
+
+	//	free(command_CB);
 
 //Code for Nordic Chip
-#ifdef FRDM
 
+/************Nordic Chip Operations*******************/
+#ifdef FRDM
 GPIO_nrf_init();
 
 SPI_init();
@@ -295,11 +299,11 @@ nrf_write_TX_ADDR(write_addr);
 nrf_read_TX_ADDR(addr);
 
 read[0] = nrf_read_fifo_status();
-
+#endif
 
 delay_us(1000);
 
-#endif
+
 
 
 
