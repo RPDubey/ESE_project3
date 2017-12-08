@@ -9,11 +9,13 @@ to another
 *******************************************************************************/
 #define project3
 
-#include"project3.c"
+#include"project3.h"
+
+#ifdef FRDM
 #include"spi.h"
 #include"gpio.h"
 #include"nordic.h"
-
+#endif
 
 int main(void){
 

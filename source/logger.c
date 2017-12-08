@@ -10,25 +10,33 @@ This file declares functions for implementing operations defined in logger.h
 #include"logger.h"
 #include"common.h"
 #include"logger_que.h"
-#include"uart.h"
 #include"conversion.h"
 
-//#define FRDM
+#ifdef FRDM
+#include"uart.h"
+#endif
+
+#ifndef FRDM
+#include<stdio.h>
+#endif
 
 extern log_data_struct* data_out ;
 extern log_data_struct *data_flush;
-
+extern uint8_t verbose_flag;
 return_enum log_data(unsigned_byte* src_ptr, size_t len){
 
+#ifdef FRDM
 	if(src_ptr == NULL) return (return_enum)Fail;
 
 	return UART_send_n(src_ptr,len);
+#endif
 
+return 1;
 }
 
 
 return_enum log_string(char* string_ptr){
-
+#ifdef FRDM
 	uint8_t ret_val;
 
 	if(string_ptr == NULL) return (return_enum)Fail;
@@ -42,11 +50,13 @@ return_enum log_string(char* string_ptr){
 		string_ptr++;
 	}
 	return ret_val;
+#endif
+return 1;
 }
 
 
 return_enum log_integer(int digit){
-
+#ifdef FRDM
 	uint8_t ret_val,ret;
 	uint8_t* temp_char = (uint8_t*)malloc(10);
 
@@ -59,6 +69,8 @@ return_enum log_integer(int digit){
 
 	free(temp_char);
 	return ret;
+#endif
+	return 1;
 }
 
 

@@ -1,10 +1,18 @@
 #ifndef SOURCE_LOGGER_H_
 #define SOURCE_LOGGER_H_
 
+#ifdef FRDM
+#include"core_cm0plus.h"
+#endif
+
+#ifndef FRDM
+#define __STATIC_INLINE static inline
+#include<stdlib.h>
+
+#endif
+
 #include"circbuf.h"
 #include"common.h"
-#include<stdlib.h>
-#include"core_cm0plus.h"
 
 /*************************************************************************
 @brief:Calculates checksum

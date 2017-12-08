@@ -1,50 +1,82 @@
 
--include ../makefile.init
+#-include ../makefile.init
 
 RM := rm -rf
 
-# All of the sources participating in the build are defined here
--include sources.mk
--include utilities/subdir.mk
--include startup/subdir.mk
--include source/subdir.mk
--include drivers/subdir.mk
--include board/subdir.mk
--include CMSIS/subdir.mk
--include .metadata/.plugins/org.eclipse.cdt.make.core/subdir.mk
--include subdir.mk
--include objects.mk
 
-ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(strip $(C++_DEPS)),)
--include $(C++_DEPS)
-endif
-ifneq ($(strip $(C_DEPS)),)
--include $(C_DEPS)
-endif
-ifneq ($(strip $(ASM_DEPS)),)
--include $(ASM_DEPS)
-endif
-ifneq ($(strip $(CC_DEPS)),)
--include $(CC_DEPS)
-endif
-ifneq ($(strip $(CPP_DEPS)),)
--include $(CPP_DEPS)
-endif
-ifneq ($(strip $(CXX_DEPS)),)
--include $(CXX_DEPS)
-endif
-ifneq ($(strip $(C_UPPER_DEPS)),)
--include $(C_UPPER_DEPS)
-endif
-ifneq ($(strip $(S_UPPER_DEPS)),)
--include $(S_UPPER_DEPS)
-endif
+ifeq ($(PLATFORM), HOST)
+
+
+
+
+OBJS = ./memory.c ./main.c ./conversion.c ./project3.c ./circbuf.c \
+			 ./logger_que.c ./logger.c
+
+CC = gcc
+CFLAGS = -Wall -g -o0 -std=c99 -Werror
+CPPFLAGS = -DPROJECT3 -DBBB
+
+.PHONY: compile-all
+compile-all: memory.o
+memory.o: memory.c
+	$(CC) -c -o $@ $^ $(CPPFLAGS) $(INCLUDES)
+compile-all:conversion.o
+conversion.o: conversion.c
+	$(CC) -c -o $@ $^ $(CPPFLAGS) $(INCLUDES)
+compile-all:project3.o
+project1.o: project3.c
+	$(CC) -c -o $@ $^ $(CPPFLAGS) $(INCLUDES)
+compile-all:main.o
+main.o:main.c
+	$(CC) -c -o $@ $^ $(CPPFLAGS) $(INCLUDES)
+compile-all:circbuf.asm
+circbuf.asm:circbuf.c common.h
+	$(CC) -c -S $@ $^ $(CPPFLAGS) $(INCLUDES)
+
+
+compile-all:project3.elf
+project3.elf: $(OBJS) #$(USER_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: gcc'
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -o "project3.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+
+
+else ifeq ($(PLATFORM) , BBB)
+
+else ifeq ($(PLATFORM) , FRDM)
+CC = arm-none-eabi-g++
+
+CFLAGS = -mcpu=cortex-m0plus -mthumb -O0 -fmessage-length=0 \
+ 				 -fsigned-char -ffunction-sections -fdata-sections -Wall  -g3
+
+CPPFLAGS = -DPROJECT3 -DFRDM
+
+LDFLAGS = -T "../MKL25Z128xxx4_flash.ld" \
+ 					-Xlinker --gc-sections -Wl,-Map,"project3.map"\
+					-Xlinker --print-map --specs=nano.specs -specs=nosys.specs\
+					-Xlinker -z -Xlinker muldefs
+
+					# Tool invocations
+project3.elf: $(OBJS) $(USER_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: Cross ARM GNU C++ Linker'
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o "project3.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+
 endif
 
--include ../makefile.defs
 
-# Add inputs and outputs from these tool invocations to the build variables 
+
+
+
+
+
+# Add inputs and outputs from these tool invocations to the build variables
 SECONDARY_FLASH += \
 project3.hex \
 
@@ -53,27 +85,8 @@ project3.siz \
 
 
 # All Target
-all: project3.elf secondary-outputs
+#all: project3.elf secondary-outputs
 
-# Tool invocations
-project3.elf: $(OBJS) $(USER_OBJS)
-	@echo 'Building target: $@'
-	@echo 'Invoking: Cross ARM GNU C++ Linker'
-	arm-none-eabi-g++ -mcpu=cortex-m0plus -mthumb -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wall  -g3 -T "../MKL25Z128xxx4_flash.ld" -Xlinker --gc-sections -Wl,-Map,"project3.map" -Xlinker --print-map --specs=nano.specs -specs=nosys.specs -Xlinker -z -Xlinker muldefs -o "project3.elf" $(OBJS) $(USER_OBJS) $(LIBS)
-	@echo 'Finished building target: $@'
-	@echo ' '
-
-project3.hex: project3.elf
-	@echo 'Invoking: Cross ARM GNU Create Flash Image'
-	arm-none-eabi-objcopy -O ihex "project3.elf"  "project3.hex"
-	@echo 'Finished building: $@'
-	@echo ' '
-
-project3.siz: project3.elf
-	@echo 'Invoking: Cross ARM GNU Print Size'
-	arm-none-eabi-size --format=berkeley -x "project3.elf"
-	@echo 'Finished building: $@'
-	@echo ' '
 
 # Other Targets
 clean:

@@ -6,32 +6,45 @@ This file initializes all the functionality for project3
 @author:Ravi Dubey
 @date:12/1/2017
  *******************************************************************************/
-#include<stdint.h>
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
+#ifdef FRDM
 
 #include"pin_mux.c"
 #include"clock_config.c"
 #include "board.h"
 #include"dma_memory.h"
-#include"memory.h"
 #include"systick.h"
-#include"circbuf.h"
 #include"uart.h"
-#include"logger_que.h"
 #include "RTC.h"
-#include"common.h"
 #include"uart.h"
 #include"nordic.h"
 #include"spi.h"
 #include"gpio.h"
+#endif
+
+#include"memory.h"
+#include"circbuf.h"
+#include"logger_que.h"
+#include"common.h"
+#include"project3.h"
+
+#include<stdint.h>
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+
 #define verbose
 
 
+uint8_t verbose_flag ;
+volatile uint32_t sec_count;
 
-LQ_t*__attribute__((section (".buffer"))) LQ_buf_ptr;//Logger Que Buffer ptr
-LQ_t*__attribute__((section (".buffer"))) HB_buf_ptr;//HeartBeatData Buffer ptr
+//LQ_t*__attribute__((section (".buffer"))) LQ_buf_ptr;//Logger Que Buffer ptr
+//LQ_t*__attribute__((section (".buffer"))) HB_buf_ptr;//HeartBeatData Buffer ptr
+
+LQ_t* LQ_buf_ptr;//Logger Que Buffer ptr
+LQ_t* HB_buf_ptr;//HeartBeatData Buffer ptr
+
+
 
 extern log_data_struct heartbeat_data;
 
@@ -40,19 +53,40 @@ log_data_struct* data_out;//this variable is used to pop data out and send over 
 log_data_struct *data_flush;
 
 
-void clock_config(void);
-void project_3(void);
+void delay_us(size_t i){
 
+i = 48*i;
+while(i) i--;
+
+}
+
+
+void clock_configure(void){
+#ifdef FRDM
+	//BOARD_BootClockRUN();
+
+	//enable clock for dma
+	SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
+	//enable clock for dmaMux
+	SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
+#endif
+
+}
+
+/*****************************************************************************/
 void project_3(void){
+
+	 verbose_flag = 1;
+	 sec_count = 0;
+
 
 #ifdef FRDM
 	BOARD_InitPins();
 //	BOARD_BootClockRUN();
 	BOARD_InitDebugConsole();
-	clock_config();
-UART_configure();
+	clock_configure();
+	UART_configure();
 #endif
-
 
 
 	log_data_struct HB_data_out ;
@@ -302,24 +336,5 @@ read[0] = nrf_read_fifo_status();
 #endif
 
 delay_us(1000);
-
-
-
-
-
-
-
-}
-
-
-void clock_config(void){
-
-	//BOARD_BootClockRUN();
-
-	//enable clock for dma
-	SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
-	//enable clock for dmaMux
-	SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
-
 
 }
