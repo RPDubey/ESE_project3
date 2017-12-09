@@ -48,7 +48,7 @@ This file initializes all the functionality for project3
 
 uint8_t verbose_flag ;
 volatile uint32_t sec_count;
-
+//extern volatile uint32_t usec_count ;
 
 
 //LQ_t*__attribute__((section (".buffer"))) LQ_buf_ptr;//Logger Que Buffer ptr

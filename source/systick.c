@@ -12,6 +12,7 @@ to another
 #include"systick.h"
 #include<MKL25Z4.h>
 
+extern volatile uint32_t usec_count ;
 void Systick_config(){
 usec_count = 0;
 

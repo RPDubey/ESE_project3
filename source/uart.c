@@ -14,6 +14,7 @@ This file declares functions for implementing operations defined in uart.h
 #include "fsl_debug_console.h"
 #include "board.h"
 #include "pin_mux.h"
+
 //#include "nvic.h"
 #define INT_UART0 28
 
