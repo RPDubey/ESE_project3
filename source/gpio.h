@@ -15,7 +15,7 @@
 This function initiates GPIO pins associated with NRF and SPI devices
 @param:None
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void GPIO_nrf_init(void);
 
 

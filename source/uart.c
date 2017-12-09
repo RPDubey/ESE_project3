@@ -111,7 +111,7 @@ void UART0_IRQHandler(){
 			CB_buffer_remove_item(command_CB,&pop);
 
 			if( (pop == 'o') && (data == 'n') ){
-				 verbose_flag = 1;
+				verbose_flag = 1;
 			}
 
 			if( (pop == 'o') && (data == 'f') ){
