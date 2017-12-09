@@ -303,16 +303,12 @@ read[0] = nrf_read_fifo_status();
 
 delay_us(1000);
 
-
-
-
-
-
-
 }
 
 
-void clock_config(void){
+
+
+void clock_configure(void){
 
 	//BOARD_BootClockRUN();
 
