@@ -1,0 +1,3796 @@
+
+/*******************************************************************************
+@file:circbuf.c
+@brief:function declarations for implementing circular buffer operations
+
+This file provides definitions for CB related functions declared declared in
+circbuf.h
+@author:Ravi Dubey
+@date:10/21/2017
+ *******************************************************************************/
+
+# include <stdlib.h>
+# include <stdio.h>
+# include "circbuf.h"
+#include"common.h"
+
+#ifdef FRDM
+#endif
+
+CB_enum CB_init(CB_t* CB_ptr, size_t CB_size ){
+
+	if(CB_ptr == NULL || CB_size == 0) return (CB_enum)Argument_Error;
+
+	CB_enum return_val;
+	CB_ptr->buf_ptr =(unsigned_byte*)malloc(CB_size);
+	return_val = (CB_ptr->buf_ptr == NULL)? Null_Error:Success ;
+	if(return_val != Success) return return_val;
+	CB_ptr->size = CB_size;
+	CB_ptr->head = CB_ptr->buf_ptr ;
+	CB_ptr->tail = CB_ptr->buf_ptr ;
+	CB_ptr->count = 0;
+	CB_ptr->buf_top_ptr = (CB_ptr->buf_ptr + CB_size * sizeof(unsigned_byte) - 1);
+	return return_val;
+
+}
+
+
+
+CB_enum CB_destroy(CB_t* CB_ptr){
+
+	if(CB_ptr == NULL ) return (CB_enum)Argument_Error;
+	free(CB_ptr->buf_ptr); // free CB storage
+	free(CB_ptr);          // free CB structure
+	return (CB_enum)Success ;
+}
+
+
+CB_enum CB_buffer_add_item( CB_t* CB_ptr , unsigned_byte data ){
+
+	if(CB_ptr == NULL ) return (CB_enum)Argument_Error;
+	//if que not full, then move head to position where data has to be stored
+	//and write it there
+
+
+	if(CB_ptr->count < CB_ptr->size ){
+
+		if(CB_ptr->head ==   CB_ptr->buf_top_ptr ){
+			CB_ptr->head = CB_ptr->buf_ptr;
+
+		}
+		else CB_ptr->head ++ ;
+
+		*(CB_ptr->head) = data;
+		CB_ptr->count++;
+
+		return (CB_enum)Success ;
+	}
+	else return (CB_enum)Buffer_Full ;
+}
+
+
+
+CB_enum CB_buffer_remove_item(CB_t* CB_ptr , unsigned_byte* data ){
+	if(CB_ptr == NULL || data == NULL) return (CB_enum)Argument_Error;
+	//If the buffer is not empty,then move tail to the next location and
+	//read the data out at the new location.
+	if(CB_ptr->count > 0 ){
+		if(CB_ptr->tail ==   CB_ptr->buf_top_ptr ){
+			CB_ptr->tail = CB_ptr->buf_ptr;
+		}
+		else CB_ptr->tail ++;
+		*data = *CB_ptr->tail;
+		CB_ptr->count-- ;
+
+		return (CB_enum)Success ;
+	}
+	else return (CB_enum)Buffer_Empty ;
+
+}
+
+
+CB_enum CB_is_full(CB_t* CB_ptr){
+	if(CB_ptr == NULL ) return (CB_enum)Argument_Error;
+	if(CB_ptr->count >= CB_ptr->size ) return (CB_enum)Buffer_Full;
+	return 0;
+}
+
+
+CB_enum CB_is_empty(CB_t* CB_ptr){
+	if(CB_ptr == NULL ) return (CB_enum)Argument_Error;
+	if(CB_ptr->count == 0 ) return (CB_enum)Buffer_Empty;
+	return 0;
+};
+
+
+CB_enum CB_peek(CB_t* CB_ptr ,size_t loc, unsigned_byte* data ){
+	if(CB_ptr == NULL || data == NULL) return (CB_enum)Argument_Error;
+	unsigned_byte* temp_head = CB_ptr->head;
+	while(loc != 0){
+		if( temp_head ==  CB_ptr->buf_top_ptr ){
+			temp_head = CB_ptr->buf_ptr;
+		}
+		else temp_head ++ ;
+		loc--;
+	}
+	*data = *temp_head;
+	return (CB_enum)Success;
+}
+
+void print_CB_enum(CB_enum return_val){
+
+	switch (return_val) {
+	case 0: printf("Success\n" );break;
+	case 1: printf("Buffer_Full\n" );break;
+	case 2: printf("Buffer_Empty\n" );break;
+	case 3: printf("Null_Error\n" );break;
+	case 4: printf("Argument_Error\n" );break;
+	}
+}
+/********************************************************************************
+@file:conversion.c
+@brief:function declarations for conversion operation functions
+
+This file declares functions for implementing conversion operations defined in
+conversion.h
+@author:Ravi Dubey
+@date:09/23/2017
+ ********************************************************************************/
+# include <stdio.h>
+# include <stdint.h>
+# include "conversion.h"
+//# include "platform.h"
+# include "memory.h"
+
+
+#define BYTE_3 (0xFF000000)
+#define BYTE_2 (0x00FF0000)
+#define BYTE_1 (0x0000FF00)
+#define BYTE_0 (0x000000FF)
+
+#define SHIFT_1BYTE (8)
+#define SHIFT_2BYTE (16)
+#define SHIFT_3BYTE (24)
+
+uint8_t my_itoa(int32_t data, uint8_t* ptr, uint32_t base){
+
+	if((base < 2) || (base >16) ){
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Base. Aborting itoa\n" );
+#endif
+		return -1;
+	}
+
+	if (ptr == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Destination poiner is Null\n");
+#endif
+		return -1;
+
+	}
+	uint8_t string_length = 0;
+	uint8_t digit;
+	int8_t sign;
+
+	if(data == 0){
+		*ptr = '0';
+		*(ptr + 1) = '\0';
+		return 2;
+	}
+
+	if(data > 0) sign = 1;
+	if(data < 0) sign = -1;
+
+	data = data*sign;//data made positive
+	*(ptr+string_length) = '\0';
+	string_length++;
+
+	while(data >0){
+
+		digit = data%base;
+		data = (data - digit)/base;//for next iteration
+
+		if(digit > 9) digit = (digit -10) + 'A'; // assign ascii value betwee A to F
+
+		else digit = digit + '0'; //assign ascii value of the digit
+		*(ptr + string_length) = digit;
+		string_length++;
+	}
+
+	if( (sign == -1) ){
+		*(ptr + string_length) = '-';
+		string_length++;
+	}
+	my_reverse(ptr,string_length);
+
+	return string_length;
+
+}
+
+int32_t my_atoi( uint8_t* ptr, uint8_t digits , uint32_t base){
+
+	if((base < 2) || (base >16) ){
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Base. Aborting atoi\n");
+#endif
+		return -1;
+	}
+
+	if (ptr == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Source poiner is Null.Aborting atoi\n" );
+#endif
+		return -1;
+
+	}
+	if (digits <= 0) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid digits. Aborting atoi\n");
+#endif
+		return -1;
+	}
+
+	int8_t sign = 1;
+
+	if( *ptr == '-' ){
+		sign = -1;
+		ptr++;//point to the first digit rather than negative sign
+		digits--;
+	}
+
+	my_reverse(ptr , digits);
+	ptr++;//skip the NULL
+	digits--;//null skipped
+
+	int32_t number_decimal = 0;
+	uint32_t power = 1;
+	uint8_t i ;
+
+	for(i = 0; i < digits; i++ ){
+
+		if( (*(ptr + i)  <= '9')  && (*(ptr + i) >= '0') ) { *(ptr+i)-= '0'; }
+		else if( (*(ptr + i)  <= 'F')  && (*(ptr + i) >= 'A' ) )  {*(ptr+i)-= 'A'; }
+		else {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+			printf("Invalid ascii values. Aborting\n");
+#endif
+			return -1;
+		}
+		number_decimal += *(ptr + i) * power ;
+		power = power * base ;
+	}
+	return number_decimal*sign ;
+}
+
+int8_t big_to_little32( uint32_t* data, uint32_t length){
+
+	if((data == NULL) || (length <= 0)){
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Arguments\n");
+#endif
+		return -1;
+	}
+	uint32_t i, temp1, temp2, temp3, temp4 = 0;
+
+	for(i = 0;i < length;i++){
+		temp1 = *(data + i) & BYTE_3>>SHIFT_3BYTE  ;
+		temp2 = *(data + i) & BYTE_2>>SHIFT_1BYTE  ;
+		temp3 = *(data + i) & BYTE_1<<SHIFT_1BYTE  ;
+		temp4 = *(data + i) & BYTE_0<<SHIFT_3BYTE  ;
+		*(data + i) = temp4 | temp3 | temp2 | temp1 ;
+	}
+	return 1;
+}
+
+int8_t little_to_big32( uint32_t* data, uint32_t length){
+
+	if((data == NULL) || (length <= 0)){
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Arguments\n");
+#endif
+		return -1;
+	}
+	uint32_t i, temp1, temp2, temp3, temp4 = 0;
+
+	for(i = 0;i < length;i++){
+		temp1 = *(data + i) & BYTE_3>>SHIFT_3BYTE  ;
+		temp2 = *(data + i) & BYTE_2>>SHIFT_1BYTE  ;
+		temp3 = *(data + i) & BYTE_1<<SHIFT_1BYTE  ;
+		temp4 = *(data + i) & BYTE_0<<SHIFT_3BYTE  ;
+		*(data + i) = temp4 | temp3 | temp2 | temp1 ;
+	}
+	return 1;
+
+}
+/*******************************************************************************
+@file:memory.c
+@brief:function declaration for memory copy operation
+
+This file declares function my_memmove for copying data from one memory location
+to another
+@author:Ravi Dubey
+@date:09/23/2017
+ *******************************************************************************/
+
+
+#include<MKL25Z4.h>
+#include"common.h"
+#include"dma_memory.h"
+#include<stdint.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+extern uint32_t __BUFFER_START, __BUFFER_END;//symbols defined in the linker script
+uint8_t* __attribute__((section (".buffer"))) temp_ptr;
+
+
+static uint8_t flag =0;
+
+uint8_t* memmove_dma(uint8_t* src, uint8_t* dst, size_t length){
+
+	//Null source or destination pointer
+	if (src == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Source Address, memmove aborted\n");
+#endif
+
+		return dst;
+	}
+
+	if (dst == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid destination Address, memmove aborted\n");
+#endif
+
+
+		return dst;
+	}
+
+	//Length =0
+	if(length <= 0) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid length\n"); return dst;
+#endif
+
+
+	}
+
+	if (src == dst) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Source and Destination are same\n" );
+#endif
+
+
+		return dst;
+	}
+
+	temp_ptr = (uint8_t*)malloc(length );
+
+
+	/*
+ Normal mode - DMAMUX is transparent
+ source is "always on" line for sw activated mem to mem transfer
+ 1. Write 0x00 to DMA MUX Channel config.
+ 2. Configure channel 0 in the DMA, including enabling the channel.
+ 	 source adress reg
+ 	 dest address reg
+ 	 control reg
+ 	 status reg
+ 3. Write appropriate value to DMA MUX channel config
+ 4.start transfer by DCRn[START] .
+	 */
+
+	//enable NVIC interrupt for channel 0 DMA
+	NVIC_EnableIRQ(DMA0_IRQn);
+
+	DMAMUX0_CHCFG0 = 0x00;
+
+	//Transfer dosent happen without this clearing
+	DMA_DCR0 &= ~(DMA_DCR_START_MASK | DMA_DCR_SSIZE_MASK | DMA_DCR_DSIZE_MASK);//Clear Source size and Destination size fields.
+
+	DMAMUX0_CHCFG0 = 0xBC; // trigger disabled ,channel 60
+
+
+	DMA_SAR0 = (uint32_t)src;
+	DMA_DAR0 =(uint32_t)temp_ptr;
+	DMA_DSR_BCR0 = DMA_DSR_BCR_BCR(length);//no. of bytes to be transferred
+
+
+#define four_byte
+
+#ifdef one_byte
+	//1 byte transfer at a time with interrupt on completion
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23)|(1UL<<21)| (1UL<<18) | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<22) | (1UL<<20) | (1UL<<19) |(1UL<<17)   ;
+	DMA_DCR0 |= (1UL<<16);
+
+#endif
+
+#ifdef two_byte
+	//2 byte transfer at a time with interrupt on completion
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23)|(1UL<<20)| (1UL<<18)  | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<22) | (1UL<<21) | (1UL<<19) |(1UL<<17)  ;
+	DMA_DCR0 |= (1UL<<16);
+
+#endif
+
+#ifdef four_byte
+	//4 byte transfer at a time with interrupt on completion
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23)|(1UL<<21)| (1UL<<20) |(1UL<<18) | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<22) | (1UL<<19) |(1UL<<17)  ;
+	DMA_DCR0 |= (1UL<<16);
+#endif
+
+	while(!flag);
+	flag= 0;
+
+	//Transfer dosent happen without this clearing
+	DMA_DCR0 &= ~(DMA_DCR_START_MASK | DMA_DCR_SSIZE_MASK | DMA_DCR_DSIZE_MASK);//Clear Source size and Destination size fields.
+
+	DMAMUX0_CHCFG0 = 0x00;
+	DMAMUX0_CHCFG0 = 0xBC; // trigger disabled ,channel 60
+
+	DMA_SAR0 = (uint32_t)temp_ptr;
+	DMA_DAR0 =(uint32_t)dst;
+	DMA_DSR_BCR0 = DMA_DSR_BCR_BCR(length);//no. of bytes to be transferred
+
+#ifdef one_byte
+	//1 byte transfer at a time with interrupt on completion
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23)|(1UL<<21)| (1UL<<18) | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<22) | (1UL<<20) | (1UL<<19) |(1UL<<17)   ;
+	DMA_DCR0 |= (1UL<<16);
+
+#endif
+
+#ifdef two_byte
+	//2 byte transfer at a time with interrupt on completion
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23)|(1UL<<20)| (1UL<<18)  | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<22) | (1UL<<21) | (1UL<<19) |(1UL<<17)  ;
+	DMA_DCR0 |= (1UL<<16);
+
+#endif
+
+#ifdef four_byte
+	//4 byte transfer at a time with interrupt on completion
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23)|(1UL<<21)| (1UL<<20) |(1UL<<18) | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<22) | (1UL<<19) |(1UL<<17)  ;
+	DMA_DCR0 |= (1UL<<16);
+#endif
+
+	while(!flag);
+
+	free(temp_ptr);
+
+	return dst;
+
+}
+
+uint8_t* memset_dma(uint8_t* src, size_t length , uint8_t value){
+
+	//Null source or destination pointer
+	if (src == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Source Address, memset aborted\n");
+#endif
+
+
+		return src;
+	}
+
+	//Length <=0
+	if(length <= 0) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Length. memset aborted\n");
+#endif
+
+
+		return src;
+	}
+
+
+	uint8_t* data_ptr = (uint8_t*)malloc(1);
+	*data_ptr = value;
+
+	//enable clock for dma
+	SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
+	//enable clock for dmaMux
+	SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
+
+	/*
+ Normal mode - DMAMUX is transparent
+ source is "always on" line for sw activated mem to mem transfer
+ 1. Write 0x00 to DMA MUX Channel config.
+ 2. Configure channel 0 in the DMA, including enabling the channel.
+ 	 source adress reg
+ 	 dest address reg
+ 	 control reg
+ 	 status reg
+ 3. Write appropriate value to DMA MUX channel config
+ 4.start transfer by DCRn[START] .
+	 */
+
+	//enable NVIC interrupt for channel 0 DMA
+	NVIC_EnableIRQ(DMA0_IRQn);
+
+	DMAMUX0_CHCFG0 = 0x00;
+
+	//Transfer dosent happen without this clearing
+	DMA_DCR0 &= ~(DMA_DCR_START_MASK | DMA_DCR_SSIZE_MASK | DMA_DCR_DSIZE_MASK);//Clear Source size and Destination size fields.
+
+	DMAMUX0_CHCFG0 = 0xBC; // trigger disabled ,channel 60
+
+
+	DMA_SAR0 = (uint32_t)data_ptr;
+	DMA_DAR0 =(uint32_t)src;
+	DMA_DSR_BCR0 = DMA_DSR_BCR_BCR(length);//no. of bytes to be transferred
+
+
+#define one_byte
+
+#ifdef one_byte
+	//1 byte transfer at a time with interrupt on completion and no source increment
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23) | (1UL<<22)| (1UL<<21)| (1UL<<18) | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<20) | (1UL<<19) |(1UL<<17)   ;
+	DMA_DCR0 |= (1UL<<16);
+
+#endif
+
+#ifdef two_byte
+	//2 byte transfer at a time with interrupt on completion and no source increment
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23) | (1UL<<22)|(1UL<<20)| (1UL<<18)  | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<21) | (1UL<<19) |(1UL<<17)  ;
+	DMA_DCR0 |= (1UL<<16);
+
+#endif
+
+#ifdef four_byte
+	//4 byte transfer at a time with interrupt on completion and no source increment
+	DMA_DCR0 &= !((1UL<<30)| (1UL<<29) | (1UL<<28)|(1UL<<24)|(1UL<<23)|(1UL<<21)  | (1UL<<22) | (1UL<<20) |(1UL<<18) | (0xFFUL<<8) | (0x3UL<<4) | 0xFUL );
+	DMA_DCR0 |= (1UL<<31) | (1UL<<19) |(1UL<<17)  ;
+	DMA_DCR0 |= (1UL<<16);
+#endif
+
+	while(!flag);
+	free(data_ptr);
+	return src;
+}
+
+
+
+
+void DMA0_IRQHandler(void){
+	//clear DONE before reprogramming the DMA.
+	DMA_DSR_BCR0 |= DMA_DSR_BCR_DONE_MASK;
+	flag = 1;
+}
+/********************************************************************************
+@file:gpio.c
+@brief:function declarations for gpio initiations
+
+This file declares functions for initiating gpio pins associated with SPI and NRF
+devices
+@author:Ravi Dubey
+@date:12/04/2017
+ ********************************************************************************/
+#include"MKL25Z4.h"
+#include"common.h"
+#include"gpio.h"
+#include<stdint.h>
+void GPIO_nrf_init(void){
+
+
+	SIM_SCGC5 |= SIM_SCGC5_PORTC_MASK;      	//Turn on clock to C port
+	SIM_SCGC4 |= SIM_SCGC4_SPI0_MASK;       	//Enable SPI0 clock
+
+
+
+	//PTC9 is the slave select pin
+	PORTC_PCR9 = PORT_PCR_MUX(0x1);    			//Set PTC9 as GPIO (alternative 1)
+	GPIOC_PDDR |= (1UL<<9);//configure the pin as output
+	GPIOC_PSOR |= (1UL<<9);//default on, slave not selected
+
+
+	//PTC11 as the chip enable nordic. Should be high.
+	PORTC_PCR11 = PORT_PCR_MUX(0x1);    			//Set PTC11 as GPIO (alternative 1)
+	GPIOC_PDDR |= (1UL<<11);//configure the pin as output
+	GPIOC_PSOR |= (1UL<<11);//on for chip enable
+
+
+
+	//	PORTC_PCR4 = PORT_PCR_MUX(0x2);    			//Set PTC4 to mux 2 [SPI0_PCS0]
+	PORTC_PCR5 = PORT_PCR_MUX(0x2);   			//Set PTC5 to mux 2 [SPI0_SCK]
+	PORTC_PCR6 = PORT_PCR_MUX(0x2);    			//Set PTC6 to mux 2 [SPI0_MOSI]
+	PORTC_PCR7 = PORT_PCR_MUX(0x2);    			//Set PTC7 to mux 2 [SPIO_MISO]
+
+
+}
+/*******************************************************************************
+@file:logger.c
+@brief:function declarations for binary logger functions
+This file declares functions for implementing operations defined in logger.h
+@author:Ravi Dubey
+@date:12/1/2017
+ *******************************************************************************/
+
+#include<stdint.h>
+#include"logger.h"
+#include"common.h"
+#include"logger_que.h"
+#include"conversion.h"
+
+#ifdef FRDM
+#include"uart.h"
+#endif
+
+#ifndef FRDM
+#include<stdio.h>
+#endif
+
+extern log_data_struct* data_out ;
+extern log_data_struct *data_flush;
+extern uint8_t verbose_flag;
+return_enum log_data(unsigned_byte* src_ptr, size_t len){
+
+#ifdef FRDM
+	if(src_ptr == NULL) return (return_enum)Fail;
+
+	return UART_send_n(src_ptr,len);
+#endif
+
+	return 1;
+}
+
+
+return_enum log_string(char* string_ptr){
+#ifdef FRDM
+	uint8_t ret_val;
+
+	if(string_ptr == NULL) return (return_enum)Fail;
+
+
+	while(*string_ptr != '\0'){
+
+		ret_val = UART_send((unsigned_byte*)string_ptr);
+
+		if(ret_val != (return_enum)Pass) break;
+		string_ptr++;
+	}
+	return ret_val;
+#endif
+	return 1;
+}
+
+
+return_enum log_integer(int digit){
+#ifdef FRDM
+	uint8_t ret_val,ret;
+	uint8_t* temp_char = (uint8_t*)malloc(10);
+
+	if(temp_char == NULL) return (return_enum)Fail;
+
+	ret_val = my_itoa(digit,temp_char, (uint32_t)10);
+	if(ret_val == -1) return (return_enum)Fail;
+
+	ret = UART_send_n((uint8_t*)temp_char,ret_val) ;
+
+	free(temp_char);
+	return ret;
+#endif
+	return 1;
+}
+
+
+return_enum log_flush(LQ_t* LQ_buf_ptr){
+
+
+	while( LQ_is_empty(LQ_buf_ptr) != Buffer_Empty ){
+		LQ_buffer_remove_item(LQ_buf_ptr,data_flush);
+
+		switch( (data_flush->ID)  ){
+
+		case LOGGER_INITIALZED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+
+			break;
+
+		case GPIO_INITIALZED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		case SYSTEM_INITIALIZED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		case SYSTEM_HALTED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		case INFO:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
+			LOG_RAW_INT(data_flush->checksum);
+			break;
+
+		case WARNING:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
+			LOG_RAW_INT(data_flush->checksum);
+			break;
+
+		case ERROR:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
+			LOG_RAW_INT(data_flush->checksum);
+			break;
+
+		case PROFILING_STARTED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		case PROFILING_RESULT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+
+			break;
+
+		case PROFILING_COMPLETED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		case DATA_RECEIVED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		case DATA_ANALYSIS_STARTED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		case DATA_ALPHA_COUNT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+			break;
+
+		case DATA_NUMERIC_COUNT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+			break;
+
+		case DATA_PUNCTUATION_COUNT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT( *((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+			break;
+
+		case DATA_MISC_COUNT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT( *((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+			break;
+
+		case DATA_ANALYSIS_COMPLETED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		case HEARTBEAT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
+
+		}}
+
+	return 0;
+}
+
+
+
+
+return_enum log_item(log_data_struct* data, LQ_t* Buffer){
+
+
+#ifdef verbose
+	uint8_t ret;
+
+	//add data to buffer head
+	ret = LQ_buffer_add_item(Buffer,*data);
+	if(ret == (CB_enum)Argument_Error) return 1;
+
+	//pop data from buffer tail
+
+	ret = LQ_buffer_remove_item(Buffer,data_out);
+
+	if(ret == (CB_enum)Argument_Error) return 1;
+
+	calc_checksum(data_out);
+
+	//write out to terminal based on type of data
+	switch( (data_out->ID)  ){
+
+	case LOGGER_INITIALZED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+
+		break;
+
+	case GPIO_INITIALZED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+	case SYSTEM_INITIALIZED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+	case SYSTEM_HALTED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+	case INFO:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		LOG_RAW_STRING((char*)data_out->payload_start_ptr);
+		LOG_RAW_INT(data_out->checksum);
+		break;
+
+	case WARNING:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		LOG_RAW_STRING((char*)data_out->payload_start_ptr);
+		LOG_RAW_INT(data_out->checksum);
+		break;
+
+	case ERROR:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		LOG_RAW_STRING((char*)data_out->payload_start_ptr);
+		LOG_RAW_INT(data_out->checksum);
+		break;
+
+	case PROFILING_STARTED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+	case PROFILING_RESULT:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		LOG_RAW_INT(*((int*)data_out->payload_start_ptr));
+		LOG_RAW_INT(data_out->checksum);
+
+		break;
+
+	case PROFILING_COMPLETED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+	case DATA_RECEIVED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+	case DATA_ANALYSIS_STARTED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+	case DATA_ALPHA_COUNT:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		LOG_RAW_INT(*((int*)data_out->payload_start_ptr));
+		LOG_RAW_INT(data_out->checksum);
+		break;
+
+	case DATA_NUMERIC_COUNT:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		LOG_RAW_INT(*((int*)data_out->payload_start_ptr));
+		LOG_RAW_INT(data_out->checksum);
+		break;
+
+	case DATA_PUNCTUATION_COUNT:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		LOG_RAW_INT( *((int*)data_out->payload_start_ptr));
+		LOG_RAW_INT(data_out->checksum);
+		break;
+
+	case DATA_MISC_COUNT:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		LOG_RAW_INT( *((int*)data_out->payload_start_ptr));
+		LOG_RAW_INT(data_out->checksum);
+		break;
+
+	case DATA_ANALYSIS_COMPLETED:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+	case HEARTBEAT:
+		LOG_RAW_INT(data_out->ID);
+		LOG_RAW_INT(data_out->time_sec);
+		LOG_RAW_INT(data_out->log_length);
+		break;
+
+
+
+	}
+
+#endif
+	return 0;
+}
+
+/****************Wrapper Functions*****************************/
+
+return_enum LOG_RAW_DATA(unsigned_byte* src_ptr,size_t len){
+
+	if(src_ptr == NULL) return 1;
+
+#ifdef BBB
+	size_t i;
+	for(i=0;i<len;i++){
+		printf("%u ",*(src_ptr+i));
+	}
+	return 0;
+#endif
+
+#ifdef FRDM
+	return log_data(src_ptr,len);
+#endif
+
+	return 1;
+
+}
+
+return_enum LOG_RAW_STRING(char* string_ptr){
+	if(string_ptr == NULL) return 1;
+
+#ifndef FRDM
+	printf("%s",string_ptr);
+	return 0;
+#endif
+
+#ifdef FRDM
+	log_string(string_ptr);
+	return 0;
+#endif
+
+	return 1;
+}
+
+return_enum LOG_RAW_INT(int digit){
+
+#ifndef FRDM
+	printf("%d",digit);
+	return 0;
+#endif
+
+#ifdef FRDM
+	return log_integer(digit);
+#endif
+
+	return 1;
+}
+
+return_enum LOG_FLUSH(LQ_t* Buffer){
+#ifdef verbose
+	if(verbose_flag==1) {
+		return log_flush(Buffer);
+
+	}
+#endif
+	return 1;
+}
+
+
+CB_enum LOG_ITEM(log_data_struct* data , LQ_t* Buffer){
+#ifdef verbose
+	if(verbose_flag==1) {
+		return log_item(data,Buffer);
+	}
+#endif
+
+	return 1;
+}
+/*******************************************************************************
+@file:cirLQuf.c
+@brief:function declarations for implementing circular buffer operations
+
+This file provides definitions for LQ related functions declared declared in
+cirLQuf.h
+@author:Ravi Dubey
+@date:10/21/2017
+ *******************************************************************************/
+
+#include<stdlib.h>
+#include"common.h"
+#include"logger_que.h"
+
+
+CB_enum LQ_init(LQ_t* LQ_ptr, size_t LQ_size ){
+
+	if(LQ_ptr == NULL || LQ_size == 0) return (CB_enum)Argument_Error;
+
+	CB_enum return_val;
+	LQ_ptr->buf_ptr =(log_data_struct*)malloc(LQ_size);
+	return_val = (LQ_ptr->buf_ptr == NULL)? Null_Error:Success ;
+	if(return_val != Success) return return_val;
+	LQ_ptr->size = LQ_size;
+	LQ_ptr->head = LQ_ptr->buf_ptr ;
+	LQ_ptr->tail = LQ_ptr->buf_ptr ;
+	LQ_ptr->count = 0;
+	LQ_ptr->buf_top_ptr = (LQ_ptr->buf_ptr + LQ_size * sizeof(log_data_struct) - 1);
+	return return_val;
+
+}
+
+
+
+CB_enum LQ_destroy(LQ_t* LQ_ptr){
+
+	if(LQ_ptr == NULL ) return (CB_enum)Argument_Error;
+	free(LQ_ptr->buf_ptr); // free LQ storage
+	free(LQ_ptr);          // free LQ structure
+	return (CB_enum)Success ;
+}
+
+/*******************************************************************************
+@file:main.c
+@brief:entry point for project
+
+entry point for project@author:Ravi Dubey
+@date:12/1/2017
+ *******************************************************************************/
+#define project3
+
+#include"project3.h"
+
+#ifdef FRDM
+#include"spi.h"
+#include"gpio.h"
+#include"nordic.h"
+#endif
+
+int main(void){
+
+#ifdef project3
+
+	project_3() ;
+#endif
+
+	while(1);
+}
+/*******************************************************************************
+@file:memory.c
+@brief:function declaration for memory copy operation
+
+This file declares function my_memmove for copying data from one memory location
+to another
+@author:Ravi Dubey
+@date:09/23/2017
+ *******************************************************************************/
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+//#include "platform.h"
+
+
+
+uint8_t* my_memmove(uint8_t* src, uint8_t* dst, size_t length){
+
+	//Null source or destination pointer
+	if (src == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Source Address, memmove aborted\n");
+#endif
+
+		return dst;
+	}
+
+	if (dst == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid destination Address, memmove aborted\n");
+#endif
+
+
+		return dst;
+	}
+
+	//Length =0
+	if(length <= 0) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid length\n"); return dst;
+#endif
+
+
+	}
+
+	if (src == dst) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Source and Destination are same\n" );
+#endif
+
+
+		return dst;
+	}
+	uint8_t* temp_ptr = (uint8_t*)malloc(length );
+	if (temp_ptr      == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Malloc Failed\n");
+#endif
+
+
+		return NULL;}
+	size_t i;
+
+	for(i = 0; i < length; i++ ){
+		*(temp_ptr + i) = *(src + i);
+	}
+
+	for(i = 0; i < length; i++ ){
+		*(dst + i) = *(temp_ptr + i);
+	}
+
+
+	return dst;
+
+}
+
+
+uint8_t* my_memcopy(uint8_t* src, uint8_t* dst, size_t length){
+
+	//Null source or destination pointer
+	if (src == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Source Address, memcopy aborted\n");
+#endif
+
+
+		return dst;
+	}
+
+	if (dst == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid destination Address, memcopy aborted\n");
+#endif
+
+
+		return dst;
+	}
+
+	//Length =<0
+	if(length <= 0) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid length\n"); return dst;
+#endif
+
+
+	}
+
+	if (src == dst) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Source and Destination are same\n" );
+#endif
+
+
+		return dst;
+	}
+
+	size_t i;
+
+	for(i = 0; i < length; i++ ){
+		*(dst + i) = *(src + i);
+	}
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+	printf("%zu elements copied succesfully\n",length );
+#endif
+
+
+	return dst;
+}
+
+
+uint8_t* my_memset(uint8_t* src, size_t length , uint8_t value){
+
+	//Null source or destination pointer
+	if (src == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Source Address, memset aborted\n");
+#endif
+
+
+		return src;
+	}
+
+	//Length <=0
+	if(length <= 0) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Length. memset aborted\n");
+#endif
+
+
+		return src;
+	}
+	size_t i;
+	for(i = 0; i < length; i++){
+
+		*(src + i) = value ;
+	}
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+	printf("%zu elements set succesfully\n",length );
+#endif
+
+
+	return src;
+
+}
+
+
+uint8_t* my_memzero(uint8_t* src, size_t length){
+	//Null source or destination pointer
+	if (src == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Source Address, memzero aborted\n");
+#endif
+
+
+		return src;
+	}
+
+	//Length =0
+	if(length <= 0) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid length. memzero aborted\n");
+#endif
+
+
+		return src;
+	}
+	size_t i;
+	for(i = 0; i < length; i++){
+
+		*(src + i) = 0 ;
+	}
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+	printf("%zu elements set succesfully\n",length );
+#endif
+
+
+	return src;
+
+}
+
+
+uint8_t* my_reverse(uint8_t* src, size_t length){
+
+	if (src == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid Source Address, memreverse aborted\n");
+#endif
+
+
+		return src;
+	}
+
+	//Length <=0
+	if(length <= 0) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Invalid length. memreverse aborted\n");
+#endif
+
+
+		return src;
+	}
+
+	uint8_t* temp_ptr = (uint8_t*)malloc(1);
+	if (temp_ptr == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Malloc Failed\n");
+#endif
+
+
+		return NULL;}
+
+	size_t i=0;
+	while( (src + i)  <  (src + length - 1 - i) ){
+
+		*temp_ptr = *(src + length  -1 - i);
+		*(src + length  -1 - i) = *(src + i);
+		*(src + i) = *temp_ptr;
+		i++;
+	}
+	return src;
+}
+
+
+int32_t* reserve_words(size_t length){
+
+	int32_t* ptr;
+	uint8_t word_size = sizeof(int32_t*);//size of a word in bytes.
+	ptr = (int32_t*)malloc(length * word_size);
+	if (ptr == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Malloc Failed\n");
+#endif
+	}
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+	else {
+		printf("%zu bytes of Memory reserved\n", length * word_size);
+	}
+#endif
+	return ptr;
+
+}
+
+
+void free_words(int32_t* src ){
+	if (src == NULL) {
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("NULL Source Address\n");
+#endif
+	}
+	else {
+		free(src);
+#ifdef ENABLE_LOWLEVEL_FUNCTION
+		printf("Memory Freed succesfully\n");
+#endif
+	}
+}
+/********************************************************************************
+@file:nordic.c
+
+@brief:function declarations for nordic library
+
+This file declares functions for nordic library
+@author:Ravi Dubey
+@date:12/06/2017
+ ********************************************************************************/
+#include"nordic.h"
+#include"spi.h"
+#include"MKL25Z4.h"
+#include"project3.h"
+
+
+#include<stdint.h>
+#include"common.h"
+
+#define nrf_chip_enable()
+#define nrf_chip_disable()
+
+#define nrf_transmit_enable()       GPIOC_PCOR |= (1UL<<9);
+#define nrf_transmit_disable()		GPIOC_PSOR |= (1UL<<9);
+
+
+uint8_t nrf_read_register(uint8_t reg){
+
+	uint8_t read;
+
+	nrf_transmit_enable();
+	SPI_write_byte(R_REGISTER | reg);
+
+	SPI_write_byte(NOP);
+	SPI_read_byte(&read);
+
+	SPI_write_byte(NOP);
+	SPI_read_byte(&read);
+
+	delay_us(10);
+	nrf_transmit_disable();
+
+	return read;
+
+}
+
+
+void nrf_write_register(uint8_t reg,uint8_t value){
+
+	//uint8_t read;
+	nrf_transmit_enable();
+
+	SPI_write_byte( W_REGISTER | reg);
+	//SPI_read_byte(&read);
+
+	SPI_write_byte( value);
+	//SPI_read_byte(&read);
+
+	delay_us(10);
+	nrf_transmit_disable();
+
+}
+
+
+uint8_t nrf_read_status(){
+
+	return nrf_read_register(STATE);
+
+}
+
+
+void nrf_write_config(uint8_t config){
+
+	nrf_write_register(CONFIG,config);
+}
+
+
+uint8_t nrf_read_config(){
+
+	return nrf_read_register(CONFIG);
+
+}
+
+
+uint8_t nrf_read_rf_setup(){
+
+	return nrf_read_register(RF_SETUP);
+
+}
+
+void nrf_write_rf_setup(uint8_t config){
+
+	nrf_write_register(RF_SETUP,config);
+}
+
+
+uint8_t nrf_read_rf_ch(){
+
+	return nrf_read_register(RF_CH);
+
+}
+
+
+void nrf_write_rf_ch(uint8_t channel){
+
+	nrf_write_register(RF_CH,channel);
+}
+
+
+void nrf_read_TX_ADDR(uint8_t* address){
+
+
+
+	nrf_transmit_enable();
+	SPI_write_byte(R_REGISTER | TX_ADDR);
+
+	SPI_write_byte(NOP);
+	SPI_read_byte(address);
+
+	SPI_write_byte(NOP);
+	SPI_read_byte(address);
+
+	SPI_write_byte(NOP);
+	SPI_read_byte(address+1);
+
+	SPI_write_byte(NOP);
+	SPI_read_byte(address+2);
+
+	SPI_write_byte(NOP);
+	SPI_read_byte(address+3);
+
+	SPI_write_byte(NOP);
+	SPI_read_byte(address+4);
+
+	delay_us(10);
+	nrf_transmit_disable();
+
+
+}
+
+
+void nrf_write_TX_ADDR(uint8_t* tx_addr){
+
+	nrf_transmit_enable();
+
+	SPI_write_byte( W_REGISTER | TX_ADDR);
+
+	//curiously, MSB gets written first and then LSB to MSB-1
+	SPI_write_byte( *(tx_addr+4));
+	SPI_write_byte( *(tx_addr+0));
+	SPI_write_byte( *(tx_addr+1));
+	SPI_write_byte( *(tx_addr+2));
+	SPI_write_byte( *(tx_addr+3));
+
+	delay_us(10);
+	nrf_transmit_disable();
+
+
+}
+
+
+uint8_t nrf_read_fifo_status(){
+
+	return nrf_read_register(FIFO_STATUS);
+
+}
+
+
+void nrf_flush_tx_fifo(){
+
+	nrf_transmit_enable();
+	SPI_write_byte(FLUSH_TX_FIFO);
+
+	delay_us(10);
+	nrf_transmit_disable();
+
+}
+
+
+void nrf_flush_rx_fifo(){
+
+	nrf_transmit_enable();
+	SPI_write_byte(FLUSH_RX_FIFO);
+
+	delay_us(10);
+	nrf_transmit_disable();
+
+
+}
+/*******************************************************************************
+@file:project3.c
+@brief:project3 functions
+
+This file initializes all the functionality for project3
+@author:Ravi Dubey
+@date:12/1/2017
+ *******************************************************************************/
+
+
+#include"memory.h"
+#include"circbuf.h"
+#include"logger_que.h"
+#include"common.h"
+#include"project3.h"
+
+#include<stdint.h>
+#include<stdlib.h>
+
+
+
+#ifdef FRDM
+#include"pin_mux.c"
+#include"clock_config.c"
+#include "board.h"
+#include"dma_memory.h"
+#include"systick.h"
+#include"uart.h"
+#include "RTC.h"
+#include"uart.h"
+#include"nordic.h"
+#include"spi.h"
+#include"gpio.h"
+#include"nordic.h"
+
+#define newline()  LOG_RAW_STRING("\n\r");
+#endif
+
+#ifndef FRDM
+#include<unistd.h>
+#include<stdio.h>
+#include<string.h>
+#include<time.h>
+#include<signal.h>
+
+#define newline()  LOG_RAW_STRING("\n");
+
+#endif
+
+
+
+
+
+#define get_time() sec_count
+#define verbose
+
+
+uint8_t verbose_flag ;
+volatile uint32_t sec_count;
+//extern volatile uint32_t usec_count ;
+
+
+//LQ_t*__attribute__((section (".buffer"))) LQ_buf_ptr;//Logger Que Buffer ptr
+//LQ_t*__attribute__((section (".buffer"))) HB_buf_ptr;//HeartBeatData Buffer ptr
+
+LQ_t* LQ_buf_ptr;//Logger Que Buffer ptr
+LQ_t* HB_buf_ptr;//HeartBeatData Buffer ptr
+
+
+
+extern log_data_struct heartbeat_data;
+
+log_data_struct* data_out;//this variable is used to pop data out and send over terminal
+
+log_data_struct *data_flush;
+
+
+void delay_us(size_t i){
+
+	i = 48*i;
+	while(i) i--;
+
+}
+
+
+
+void clock_configure(void){
+#ifdef FRDM
+	//BOARD_BootClockRUN();
+
+	//enable clock for dma
+	SIM->SCGC7 |= SIM_SCGC7_DMA_MASK;
+	//enable clock for dmaMux
+	SIM->SCGC6 |= SIM_SCGC6_DMAMUX_MASK;
+#endif
+
+}
+
+log_data_struct heartbeat_data;
+//char HB[]="HB";
+
+
+#ifndef FRDM
+
+
+
+void handle(int sig) {
+
+	signal(SIGALRM, SIG_IGN);
+	signal(SIGALRM,handle);
+	alarm(1);
+	sec_count++;
+	heartbeat_data.time_sec = sec_count;
+
+
+
+#ifdef verbose
+	if(verbose_flag == 1){
+		LOG_RAW_STRING("\n");//curiously, logging dosent happen without this
+		LOG_RAW_INT(heartbeat_data.ID);
+		LOG_RAW_INT(heartbeat_data.time_sec);
+		LOG_RAW_INT(heartbeat_data.log_length);}
+
+#endif
+
+
+}
+#endif
+
+
+
+void HeartBeat_config(){
+
+	//static payload for HEARBEAT
+	heartbeat_data.ID = HEARTBEAT;
+	heartbeat_data.log_length = 0;
+	heartbeat_data.payload_start_ptr = NULL;
+	heartbeat_data.checksum = 0;
+
+#ifdef FRDM
+
+	RTC_config();
+	delay_us(1000);
+
+#endif
+
+
+#ifndef FRDM
+	signal(SIGALRM, handle);
+	alarm(1);
+
+#endif
+
+}
+
+
+
+/*****************************************************************************/
+void project_3(void){
+
+	//LOG_RAW_STRING(welcome);
+
+	verbose_flag = 1;
+	sec_count = 0;
+	//printf("Project3\n");
+
+
+#ifdef FRDM
+	BOARD_InitPins();
+	//	BOARD_BootClockRUN();
+	BOARD_InitDebugConsole();
+	clock_configure();
+	UART_configure();
+#endif
+
+
+
+
+	log_data_struct data_log; //structure to store profiling data
+
+	data_flush = (log_data_struct*)malloc(sizeof(log_data_struct) );
+	data_out = (log_data_struct*)malloc(sizeof(log_data_struct) );
+	LQ_buf_ptr = (LQ_t*)malloc(sizeof(LQ_t));
+	HB_buf_ptr = (LQ_t*)malloc(sizeof(LQ_t));
+
+	if( (LQ_buf_ptr == NULL) || (data_out == NULL)  || (HB_buf_ptr == NULL) || (data_flush == NULL) ) return ;
+
+	LQ_init(LQ_buf_ptr,512);
+	LQ_init(HB_buf_ptr,5*sizeof(log_data_struct));
+
+
+	data_log.ID = LOGGER_INITIALZED ;
+	data_log.time_sec = 0;
+	data_log.log_length = 0;
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	HeartBeat_config();
+
+
+	//printf("project3\n");
+
+	data_log.ID = SYSTEM_INITIALIZED;
+	data_log.time_sec = get_time();
+	data_log.log_length = 0;
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+
+	//start profiling
+	data_log.ID = PROFILING_STARTED;
+	data_log.time_sec = get_time();
+	data_log.log_length = 0;
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+	newline();
+
+	//10 bytes
+	//memmove profiling
+	uint8_t source[5000];
+	uint8_t dst[5000];
+	uint16_t i =0;
+	size_t len = 0;
+	for (i=0;i<5000;i++){
+		source[i] = 1;
+		dst[i] = 0;
+	}
+
+	//set up for profiling
+	volatile uint32_t start_ticks = 0;
+	volatile uint32_t end_ticks = 0;
+	volatile uint32_t time_us = 0;
+
+
+	//Profiling for FRDM
+#ifdef FRDM
+
+	//profiling variables
+
+	//start DMA version profiling section
+
+	Systick_config();
+
+	newline();
+	len = 5000;
+	start_ticks = usec_count;
+	memmove_dma(source,dst,len);
+	end_ticks = usec_count;
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 1000;
+	start_ticks = usec_count;
+	memmove_dma(source,dst,len);
+	end_ticks = usec_count;
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 100;
+	start_ticks = usec_count;
+	memmove_dma(source,dst,len);
+	end_ticks = usec_count;
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 10;
+	start_ticks = usec_count;
+	memmove_dma(source,dst,len);
+	end_ticks = usec_count;
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	//memset profiling
+	len = 5000;
+	start_ticks = usec_count;
+	memset_dma(dst,len,1);
+	end_ticks = usec_count;
+	time_us = end_ticks - start_ticks;
+
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 1000;
+	start_ticks = usec_count;
+	memset_dma(dst,len,1);
+	end_ticks = usec_count;
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 100;
+	start_ticks = usec_count;
+	memset_dma(dst,len,1);
+	end_ticks = usec_count;
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 10;
+	start_ticks = usec_count;
+	memset_dma(dst,len,1);
+	end_ticks = usec_count;
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+	newline();
+	//disable systick used for profiling
+	SysTick->CTRL &= ~(1UL)  ;
+
+#endif
+
+#ifdef FRDM
+Systick_config();	
+#endif
+
+	//Non DMA based profiling for memmove - library version
+
+
+	start_ticks = get_precision_time();
+	memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks;// - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+
+	len = 1000;
+	start_ticks = get_precision_time();
+	memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks ;//- start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 100;
+	start_ticks = get_precision_time();
+	memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 10;
+	start_ticks = get_precision_time();
+	memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	//memset profiling
+	len = 5000;
+	start_ticks = get_precision_time();
+	memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 1000;
+	start_ticks = get_precision_time();
+	memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+
+	newline();
+	len = 100;
+	start_ticks = get_precision_time();
+	memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 10;
+	start_ticks = get_precision_time();
+	memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+	newline();
+
+
+
+
+	//Non DMA based profiling for memmove - my version
+
+
+	len = 5000;
+	start_ticks = get_precision_time();
+	my_memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 1000;
+	start_ticks = get_precision_time();
+	my_memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 100;
+	start_ticks = get_precision_time();
+	my_memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 10;
+	start_ticks = get_precision_time();
+	my_memmove(source,dst,len);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+	newline();
+	//memset profiling
+
+
+	len = 5000;
+	start_ticks = get_precision_time();
+	my_memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 1000;
+	start_ticks = get_precision_time();
+	my_memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 100;
+	start_ticks = get_precision_time();
+	my_memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	newline();
+	len = 10;
+	start_ticks = get_precision_time();
+	my_memset(dst,len,1);
+	end_ticks = get_precision_time();
+	time_us = end_ticks - start_ticks;
+
+	data_log.ID = PROFILING_RESULT ;
+	data_log.time_sec = get_time();
+	data_log.log_length = 4;
+	data_log.payload_start_ptr = (uint8_t*)&time_us;
+	calc_checksum(&data_log);
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+	newline();
+
+	//profiling completed
+	data_log.ID = PROFILING_COMPLETED;
+	data_log.time_sec = get_time();
+	data_log.log_length = 0;
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+#ifdef FRDM
+	//disable systick used for profiling
+	SysTick->CTRL &= ~(1UL)  ;
+#endif
+
+
+
+	//Code for Nordic Chip read and write operations
+
+	/************Nordic Chip Operations*******************/
+#ifdef FRDM
+	GPIO_nrf_init();
+
+	SPI_init();
+
+	delay_us(100);
+
+	uint8_t read[10] ;
+	uint8_t addr[5];
+	uint8_t write_addr[5] ={1,2,3,4,5};
+
+	read[0] = nrf_read_config();
+
+	read[1] = nrf_read_status();
+
+	nrf_write_config(0x01);
+
+	read[2] = nrf_read_config();
+
+	read[3] = nrf_read_rf_setup();
+
+	nrf_write_rf_setup(0x01);
+
+	read[4] = nrf_read_config();
+
+	read[5] = nrf_read_rf_ch();
+
+	nrf_write_rf_ch(0x01);
+
+	read[6] = nrf_read_rf_ch();
+
+	nrf_read_TX_ADDR(addr);
+
+	nrf_write_TX_ADDR(write_addr);
+
+	nrf_read_TX_ADDR(addr);
+
+	read[0] = nrf_read_fifo_status();
+#endif
+
+
+
+	while(1);
+
+	free(LQ_buf_ptr);
+	free (data_out);
+	free(HB_buf_ptr);
+
+
+
+}
+
+
+/*******************************************************************************
+@file:RTC.c
+@brief:function declarations for configuring RTC to implement a 'heartbeat'
+
+This file provides definitions for RTC related functions declared in RTC.h
+@author:Ravi Dubey
+@date:12/2/2017
+ *******************************************************************************/
+
+#include<MKL25Z4.h>
+
+#include<stdlib.h>
+#include"RTC.h"
+#include"logger_que.h"
+#include"common.h"
+#include"project3.c"
+
+
+
+extern LQ_t* LQ_buf_ptr;
+extern LQ_t* HB_buf_ptr;
+extern uint8_t verbose_flag;
+extern log_data_struct heartbeat_data;
+uint8_t heartbeat_flag;
+
+void RTC_config(void){
+
+
+	NVIC_EnableIRQ(RTC_Seconds_IRQn );
+
+	SIM->SOPT1 |= (1UL<<18) | (1UL<<19) ; //select 1KHZ osc LPO for rtc counter
+	SIM_SCGC6 |= SIM_SCGC6_RTC_MASK;//enable software access and interrupts to RTC
+
+	// wait for clock to stabilize
+	uint32_t j =48000;
+	while(j){
+		j--;
+	}
+
+
+	RTC_LR = 0x000000FF ;// unlock write access to registers
+	RTC_CR =  0X00000004;//NOn supervisor mode acces enabled. rest zero
+
+	RTC_TSR = 0x00000001;//Time seconds REgister.writing zero not recommended
+	RTC_TAR = 0x00000000;//TAR never equals TSR, hence alarm flag always clear
+	RTC_TPR = 0x00007FFF- 999 ;//14th bit goes low on 1000th count,triggerring interrupt
+
+	RTC_IER = 0x00000010;//second interrupt enable
+	RTC_SR  |=(1UL<<4); //status- enable counter
+
+}
+
+void RTC_Seconds_IRQHandler(void)
+{
+	RTC_SR  &= ~(1UL<<4); //disable counter
+	RTC_TPR = 0x00007FFF-999 ;
+	RTC_SR  |=(1UL<<4);   // enable counter
+	sec_count++;
+	heartbeat_data.time_sec = sec_count;
+
+	//add data to a heartbeat buffer
+#ifdef verbose
+	if(verbose_flag == 1){
+		LOG_RAW_INT(heartbeat_data.ID);
+		LOG_RAW_INT(heartbeat_data.time_sec);
+		LOG_RAW_INT(heartbeat_data.log_length);
+	}
+#endif
+}
+/********************************************************************************
+@file:spi.c
+@brief:function declarations for SPI library
+
+This file declares functions for SPI library
+@author:Ravi Dubey
+@date:12/04/2017
+ ********************************************************************************/
+
+#include"MKL25Z4.h"
+#include"spi.h"
+#include<stdlib.h>
+
+void SPI_init(){
+
+
+	//NVIC
+	//NVIC_EnableIRQ(SPI0_IRQn);
+
+
+	//Set SPI0 to Master & SS pin to auto SS & enable rcv full and tx empty interrupts
+	//clock polarity is active high
+
+	SPI0_C1 = SPI_C1_MSTR_MASK ;
+
+	SPI0_C2 &= 0x40;// all zero except the reserved bit
+
+	//Set baud rate prescale divisor to 6 & set baud rate divisor to 8
+	SPI0_BR &= 0b11010010;//(SPI_BR_SPPR(0x06) | SPI_BR_SPR(0x08));
+
+	SPI0_C1 |= SPI_C1_SPE_MASK;    //Enable SPI0
+
+
+
+}
+
+
+//void SPI0_IRQHandler(void){
+//
+//	volatile uint8_t data_send = 8;
+//	volatile uint8_t data_rxv;
+//
+//
+//	//check if Rxv buffer full and read the data to clear interrupt
+//
+//}
+
+
+
+
+
+void SPI_read_byte(uint8_t* byte){
+	while( !(SPI0_S & SPI_S_SPRF_MASK) );
+	*byte = SPI0_D;
+
+}
+
+void SPI_write_byte(uint8_t byte){
+
+	while( !(SPI0_S & SPI_S_SPTEF_MASK)  );
+	SPI0_D = byte;
+
+}
+
+
+void SPI_send_packet(uint8_t* p,size_t length){
+
+	for(size_t i = 0; i< length; i++){
+
+		while( !(SPI0_S & SPI_S_SPTEF_MASK)  );
+		SPI0_D = *(p+i);
+	}
+}
+
+void SPI_flush();
+
+
+/*******************************************************************************
+@file:systick.c
+@brief:function declaration for systick configuration
+
+This file declares systick config function
+to another
+@author:Ravi Dubey
+@date:12/1/2017
+ *******************************************************************************/
+
+#include<stdint.h>
+#include"systick.h"
+#include<MKL25Z4.h>
+
+extern volatile uint32_t usec_count ;
+void Systick_config(){
+	usec_count = 0;
+
+#define SysTick_Enable_Mask      (1UL)  //enable systick
+#define SysTick_Exception_Mask   (1UL << 1) //raise exception on overflow
+#define Processor_ClkSrc         (1UL << 2) //48 MHz processor clock
+
+
+	SysTick->LOAD = 47;  // reload value is 47 for overflow after 48 counts for 1 us ticks
+	SysTick->VAL = 0x00;  //clear current value
+	SysTick->CTRL |= SysTick_Enable_Mask | SysTick_Exception_Mask | Processor_ClkSrc ;
+
+}
+
+
+void SysTick_Handler(){
+	usec_count++;
+}
+/*******************************************************************************
+@file:uart.c
+@brief:function declarations for uart operation functions
+This file declares functions for implementing operations defined in uart.h
+@author:Ravi Dubey
+@date:10/22/2017
+ *******************************************************************************/
+
+#include <stdlib.h>
+#include "uart.h"
+#include "MKL25Z4.h"
+
+#include "fsl_device_registers.h"
+#include "fsl_debug_console.h"
+#include "board.h"
+#include "pin_mux.h"
+
+//#include "nvic.h"
+#define INT_UART0 28
+
+#include "circbuf.h"
+
+extern uint8_t verbose_flag;
+CB_t* command_CB;
+unsigned_byte newline[2] = "\r\n" ;
+
+return_enum UART_configure(){
+
+
+	//EnableInterrupts;
+
+	//    enable_irq(INT_UART0 -16);
+	//	set_irq_priority((INT_UART0 -16), 2);
+	NVIC_EnableIRQ(UART0_IRQn);
+
+	UART0->C2 |= UART_C2_RIE_MASK;
+	//	UART0->C2 |= UART_C2_TIE_MASK;
+
+	//two byte CB for run time switch
+	command_CB = (CB_t*)(malloc(sizeof(CB_t)));
+	CB_init(command_CB,2);
+
+
+
+
+	return 0;
+}
+
+return_enum UART_send(unsigned_byte* data_ptr){
+
+	while(!(UART0->S1 & UART0_S1_TDRE_MASK));//wait until Tx Data register is empty
+	UART0->D = *data_ptr;
+	return 0;
+}
+
+return_enum UART_send_n(unsigned_byte* data_ptr,size_t num_bytes){
+
+	if(data_ptr == NULL) return (return_enum)Fail;
+
+	while(num_bytes){
+
+		while(!(UART0->S1 & UART0_S1_TDRE_MASK));//wait until Tx Data register is empty
+		UART0->D = *data_ptr;
+		data_ptr++;
+		num_bytes--;
+	}
+	return 0;
+}
+
+return_enum UART_receive(unsigned_byte* data_ptr){
+
+	while (!(UART0->S1 & UART0_S1_RDRF_MASK));//wait until Rx data register is full
+	*data_ptr = UART0->D;
+	return 0;
+}
+
+
+return_enum UART_receive_n(unsigned_byte* data_ptr,size_t num_bytes){
+	while(num_bytes){
+
+		while (!(UART0->S1 & UART0_S1_RDRF_MASK));//wait until Rx data register is full
+		*data_ptr = UART0->D;
+		data_ptr++;
+		num_bytes--;
+	}
+	return 0;
+}
+
+
+
+void UART0_IRQHandler(){
+
+
+	//if RX interrupt
+	if (UART0->S1 & UART_S1_RDRF_MASK)
+	{
+		UART0->S1 &= ~UART_S1_RDRF_MASK; //clear the Rx interrupt
+		//Rx_function();//registered in main
+		unsigned_byte data = UART0->D;
+		unsigned_byte pop;
+
+		if(CB_is_empty(command_CB) == Buffer_Empty){
+			CB_buffer_add_item(command_CB,data);
+			UART_send_n(newline,2);
+			UART_send(&data);
+		}
+
+		else //if this is the second entry
+		{
+			UART_send(&data);
+			CB_buffer_remove_item(command_CB,&pop);
+
+			if( (pop == 'o') && (data == 'n') ){
+				verbose_flag = 1;
+			}
+
+			if( (pop == 'o') && (data == 'f') ){
+				verbose_flag = 0;
+			}
+
+
+		}
+	}
+
+	//if TX interrupt
+	if ( ((UART0->S1 & UART_S1_TDRE_MASK) || (UART0->S1 & UART_S1_TC_MASK)) )
+	{
+
+		UART0->S1 &= ~UART_S1_TDRE_MASK; //clear the Tx interrupt
+		//Tx_function();//registered in main
+		//		unsigned_byte data = UART0->D;
+		//
+		//		UART_receive(&data);
+
+	}
+
+}
+
+
+/*******************************************************************************
+@file:circbuf.h
+@brief:An abstraction for circular buffer operations implemented in circbuf.c
+
+This file provides definitions for functions and external variables of file
+circbuf.c
+@author:Ravi Dubey
+@date:10/21/2017
+ *******************************************************************************/
+
+
+#ifndef FILE_CIRCBUF
+#define FILE_CIRCBUF
+
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "common.h"
+#include"logger.h"
+
+
+
+/*******************************************************************************
+@brief:Implements adding items to circular buffer
+This function takes data to be added to the circular buffer and the poiner to
+the circulr buffer and adds the data to this CB.
+@param:Pointer to CB, pointer to data to be added to this CB
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum CB_buffer_add_item( CB_t* , unsigned_byte );
+
+
+/*******************************************************************************
+@brief:Implements removing items from circular buffer
+This function gives pointer to the circular buffer from which the data has to be
+removed and the variable in which the removed data has to be stored.
+@param:Pointer to CB, pointer to the variable where popped data has to be saved
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum CB_buffer_remove_item(CB_t* , unsigned_byte*);
+
+
+/*******************************************************************************
+@brief:Implements checking whether circular buffer is full
+This function takes poiner tothe circulr buffer and checks for full state.
+@param:Pointer to CB
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum CB_is_full(CB_t*);
+
+
+
+/*******************************************************************************
+@brief:Implements checking whether circular buffer is Empty
+This function takes poiner tothe circulr buffer and checks for Empty state.
+@param:Pointer to CB
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum CB_is_empty(CB_t*);
+
+
+/*******************************************************************************
+@brief:Implements seeking data in circular buffer at particular location
+This function takes pointer to a circular buffer, and position from head to peek
+into and  pointer where this data will be stored.
+@param:Pointer to CB,position from head to seek into, pointer to adress where
+the data has to be stored.
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum CB_peek(CB_t* ,size_t, unsigned_byte* );
+
+
+
+/*******************************************************************************
+@brief:Implements initiatin a circular buffer
+This function poiner to the circulr buffer and size to be reserved for the CB
+in Bytes.
+@param:Pointer to CB, size of buffer in bytes.
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum CB_init(CB_t* CB_ptr , size_t CB_size);
+
+
+
+/*******************************************************************************
+@brief:Implements destroying the circular buffer
+This function takes pointer to the circular buffer to be destroyed
+@param:Pointer to CB
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum CB_destroy(CB_t* CB_ptr);
+
+
+/*******************************************************************************
+@brief:Implements printinting CB functions returns
+This function takes return of type CB_enum
+@param:CB_enum type enum
+@return:void
+ *******************************************************************************/
+void print_CB_enum(CB_enum);
+
+#endif
+/*******************************************************************************
+@file:common.h
+@brief:structures/variables common to most source files
+
+structures/variables common to most source files@author:Ravi Dubey
+@date:12/1/2017
+ *******************************************************************************/
+
+#ifndef SOURCE_COMMON_H_
+#define SOURCE_COMMON_H_
+#include<stdlib.h>
+#include<stdint.h>
+
+#define verbose
+
+//#define FRDM
+
+
+//enum for return type of functions
+typedef enum{
+	Pass,
+	Fail
+}return_enum;
+
+
+typedef enum{
+	LOGGER_INITIALZED,
+	GPIO_INITIALZED,
+	SYSTEM_INITIALIZED,
+	SYSTEM_HALTED,
+	INFO,
+	WARNING,
+	ERROR,
+	PROFILING_STARTED,
+	PROFILING_RESULT,
+	PROFILING_COMPLETED,
+	DATA_RECEIVED,
+	DATA_ANALYSIS_STARTED,
+	DATA_ALPHA_COUNT,
+	DATA_NUMERIC_COUNT,
+	DATA_PUNCTUATION_COUNT,
+	DATA_MISC_COUNT,
+	DATA_ANALYSIS_COMPLETED,
+	HEARTBEAT //TImestamp, logged once every second
+}LOG_ID;
+
+typedef struct{
+	uint32_t time_sec;//Time stamp in second elapsed
+	size_t log_length;//length of payload
+	uint8_t* payload_start_ptr;//pointer to payload
+	uint8_t checksum;//checksum
+	LOG_ID ID;//type of log
+
+}log_data_struct;
+
+#define unsigned_byte uint8_t
+
+typedef enum{
+	Success ,
+	Buffer_Full,
+	Buffer_Empty,
+	Null_Error,
+	Argument_Error
+}CB_enum;
+
+//structures for Circular Buffer
+typedef struct{
+	unsigned_byte* buf_ptr;  //points to begining of buffer in memory
+	unsigned_byte* head;     // where to add item
+	unsigned_byte* tail;     //where to pop item
+	size_t size;    //buffer size
+	size_t count;   //current number of items on the buffer
+	unsigned_byte* buf_top_ptr; //points to the end of buffer in memory
+}CB_t;
+
+
+//structure for logger Que
+typedef struct{
+	log_data_struct* buf_ptr;  //points to begining of buffer in memory
+	log_data_struct* head;     // where to add item
+	log_data_struct* tail;     //where to pop item
+	size_t size;    //buffer size
+	size_t count;   //current number of items on the buffer
+	log_data_struct* buf_top_ptr; //points to the end of buffer in memory
+}LQ_t;
+
+
+
+
+
+
+#endif /* SOURCE_COMMON_H_ */
+/********************************************************************************
+@file:conversion.h
+@brief:An abstraction for conversion operations implemented in conversion.c
+
+This file provides definitions for functions and external variables of file
+conversion.c
+@author:Ravi Dubey
+@date:09/23/2017
+ ********************************************************************************/
+
+
+#ifndef FILE_CONVERSION
+#define FILE_CONVERSION
+
+#include <stdint.h>
+#include "common.h"
+/********************************************************************************
+@brief:Implements Integer to ASCII conversion
+
+This function converts data from standard Integer type(base 2 to 16) into an ASCII
+string and store it in the given memory location.
+@param:Integer to be converted to ASCII, BASE, Pointer to location to store converted
+value.
+@return:length of the converted data. -1 in case of error
+ ********************************************************************************/
+uint8_t my_itoa(int32_t, uint8_t*, uint32_t);
+
+
+/********************************************************************************
+@brief:Implements ASCII to Integer conversion
+
+This function converts data from ASCII to standard Integer type(base 2 to 16)
+@param:Pointer to ascii string to be converted, Length of the ascii string, Base of
+converted integer
+@return: Converted Integer Value. -1 in case of error.
+ ********************************************************************************/
+int32_t my_atoi( uint8_t*, uint8_t , uint32_t);
+
+
+/********************************************************************************
+@brief:Implements Big to Little Endian conversion
+
+This function converts array of data in memory from a Big Endian representation to
+a Little Endian.
+@param:Pointer to data, Length of data in bytes.
+@return: 1 on Success, -1 if fails.
+ ********************************************************************************/
+int8_t big_to_little32( uint32_t*, uint32_t);
+
+
+/********************************************************************************
+@brief:Implements Little to Big Endian conversion
+
+This function converts array of data in memory from a Little Endian representation
+to Big Endian.
+@param:Pointer to data, Length of data in bytes.
+@return: 1 on Success, -1 if fails.
+ ********************************************************************************/
+int8_t little_to_big32( uint32_t*, uint32_t);
+
+#endif
+
+#include <stdint.h>
+#include <stddef.h>
+
+#ifndef FILE_MEMORY_DMA
+#define FILE_MEMORY_DMA
+
+
+/*******************************************************************************
+@brief:Moves data from source memory location to destination using DMA
+
+This function takes two byte pointers(src & dst) and a length of bytes to move
+ from the source location to the destination.
+@param:pointer to source memory, pointer to destination memory, length of data
+in bytes
+@return:pointer to destination memory.
+ *******************************************************************************/
+uint8_t* memmove_dma(uint8_t* src, uint8_t* dst, size_t length);
+
+
+
+/*******************************************************************************
+@brief:Sets given value to the given memory locations
+
+This function takes a pointer to a source memory location, length in bytes and
+set all locations of that memory to the given value.
+@param:pointer to source memory, length of memory in bytes, value to be set
+@return:pointer to source memory.
+ *******************************************************************************/
+uint8_t* memset_dma(uint8_t*, size_t , uint8_t);
+
+
+
+#endif
+/*
+ * gpio.h
+ *
+ *  Created on: Dec 4, 2017
+ *      Author: Ravi
+ */
+
+#ifndef SOURCE_GPIO_H_
+#define SOURCE_GPIO_H_
+
+
+/********************************************************************************
+@brief:Implements GPIO Initiation
+
+This function initiates GPIO pins associated with NRF and SPI devices
+@param:None
+@return:none
+ ********************************************************************************/
+void GPIO_nrf_init(void);
+
+
+#endif /* SOURCE_GPIO_H_ */
+#ifndef SOURCE_LOGGER_H_
+#define SOURCE_LOGGER_H_
+
+#ifdef FRDM
+#include"core_cm0plus.h"
+#endif
+
+#ifndef FRDM
+#define __STATIC_INLINE static inline
+#include<stdlib.h>
+
+#endif
+
+#include"circbuf.h"
+#include"common.h"
+
+/*************************************************************************
+@brief:Calculates checksum
+
+Takes a pointer to a logger data structure and calculates and sets the
+checksum field of the structure
+@param:pointer to dat, num of data
+@return:return_enum
+ *************************************************************************/
+__attribute__((always_inline)) __STATIC_INLINE return_enum calc_checksum(log_data_struct*);
+
+return_enum calc_checksum(log_data_struct* data_ptr){
+
+
+	if(data_ptr->log_length < 1) return 0;
+
+	uint8_t temp = 0x00;
+
+	for(size_t i =0;i < (data_ptr->log_length);i++){
+
+		temp ^= *(data_ptr->payload_start_ptr + i);
+
+	}
+	data_ptr->checksum = temp;
+	return 0;
+}
+
+/*************************************************************************
+@brief:BLocked logging through UART
+
+Takes a pointer to a sequence of bytes, length, and logs it out through UART
+@param:pointer to dat, num of data
+@return:return_enum
+ *************************************************************************/
+return_enum log_data(unsigned_byte*,size_t);
+
+
+
+/*************************************************************************
+@brief:BLocked logging through UART
+
+Takes a C string, logs it out through UART to terminal
+@param:pointer to string array
+@return:return_enum
+ *************************************************************************/
+return_enum log_string(char*);
+
+
+
+/*************************************************************************
+@brief:BLocked logging through UART
+
+Takes an integer and logs it out through UART using itoa()
+@param:integer
+@return:return_enum
+ *************************************************************************/
+return_enum log_integer(int);
+
+
+
+/*************************************************************************
+@brief:BLocked logging through UART
+
+blocks until current buffer is empty
+@param:none
+@return:return_enum
+ *************************************************************************/
+return_enum log_flush(LQ_t*);
+
+
+/*************************************************************************
+@brief:Non BLocked logging through Buffer
+
+stores logging data in circular buffer
+@param:pointer to data to be logged, C buffer to be logged into
+@return:return_enum
+ *************************************************************************/
+return_enum log_item(log_data_struct* , LQ_t*);
+
+
+/*************************************************************************
+@brief:Wrapper for log_data()
+
+Takes a pointer to a sequence of bytes, length, and logs it out through UART
+@param:pointer to dat, num of data
+@return:return_enum
+ *************************************************************************/
+return_enum LOG_RAW_DATA(unsigned_byte*,size_t);
+
+/*************************************************************************
+@brief:wrapper for log_string()
+
+Takes a C string, logs it out through UART to terminal
+@param:pointer to string array
+@return:return_enum
+ *************************************************************************/
+return_enum LOG_RAW_STRING(char*);
+
+/*************************************************************************
+@brief:wrapper for log_integer()
+
+Takes an integer and logs it out through UART using itoa()
+@param:integer
+@return:return_enum
+ *************************************************************************/
+return_enum LOG_RAW_INT(int);
+
+/*************************************************************************
+@brief:Wrapper for log_flush()
+
+blocks until current buffer is empty
+@param:none
+@return:return_enum
+ *************************************************************************/
+return_enum LOG_FLUSH(LQ_t*);
+
+
+
+/*************************************************************************
+@brief:Wrapper for log_item
+
+stores logging data in circular buffer
+@param:pointer to data to be logged, C buffer to be logged into
+@return:return_enum
+ *************************************************************************/
+CB_enum LOG_ITEM(log_data_struct* , LQ_t*);
+
+
+#endif /* SOURCE_LOGGER_H_ */
+/*******************************************************************************
+@file:logger_q.h
+@brief:An abstraction for Logger buffer operations implemented in cirLQuf.c
+
+This file provides definitions for functions and external variables of file
+cirLQuf.c
+@author:Ravi Dubey
+@date:10/21/2017
+ *******************************************************************************/
+
+
+#ifndef SOURCE_LOGGER_QUE_H_
+#define SOURCE_LOGGER_QUE_H_
+
+#ifdef FRDM
+#include"core_cm0plus.h"
+#endif
+
+#include<stdlib.h>
+#include"common.h"
+
+#ifndef FRDM
+#define __STATIC_INLINE static inline
+#endif
+
+#ifdef FRDM
+#define START_CRITICAL() __disable_irq()
+#define END_CRITICAL()  __enable_irq()
+#endif
+
+#ifndef FRDM
+#define START_CRITICAL()
+#define END_CRITICAL()
+#endif
+
+
+
+/*******************************************************************************
+@brief:Implements adding items to Logger buffer
+This function takes data to be added to the Logger buffer and the poiner to
+the circulr buffer and adds the data to this LQ.
+@param:Pointer to LQ, pointer to data to be added to this LQ
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+__attribute__((always_inline)) __STATIC_INLINE CB_enum LQ_buffer_add_item( LQ_t* , log_data_struct );
+CB_enum LQ_buffer_add_item( LQ_t* LQ_ptr , log_data_struct data ){
+
+	if(LQ_ptr == NULL ) return (CB_enum)Argument_Error;
+	//if que not full, then move head to position where data has to be stored
+	//and write it there
+
+
+	if(LQ_ptr->count < LQ_ptr->size ){
+
+		START_CRITICAL();
+		if(LQ_ptr->head ==   LQ_ptr->buf_top_ptr ){
+			LQ_ptr->head = LQ_ptr->buf_ptr;
+
+		}
+		else LQ_ptr->head ++ ;
+
+		*(LQ_ptr->head) = data;
+		LQ_ptr->count++;
+
+		END_CRITICAL();
+		return (CB_enum)Success ;
+	}
+	else return (CB_enum)Buffer_Full ;
+}
+
+
+/*******************************************************************************
+@brief:Implements removing items from Logger buffer
+This function gives pointer to the Logger buffer from which the data has to be
+removed and the variable in which the removed data has to be stored.
+@param:Pointer to LQ, pointer to the variable where popped data has to be saved
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+__attribute__((always_inline)) __STATIC_INLINE CB_enum LQ_buffer_remove_item(LQ_t* , log_data_struct*);
+
+//function definition for static function
+CB_enum LQ_buffer_remove_item(LQ_t* LQ_ptr , log_data_struct* data ){
+	if(LQ_ptr == NULL || data == NULL) return (CB_enum)Argument_Error;
+
+	//If the buffer is not empty,then move tail to the next location and
+	//read the data out at the new location.
+	if(LQ_ptr->count > 0 ){
+		START_CRITICAL();
+		{
+			if(LQ_ptr->tail ==   LQ_ptr->buf_top_ptr ){
+				LQ_ptr->tail = LQ_ptr->buf_ptr;
+			}
+			else (LQ_ptr->tail) ++;
+
+			*( (log_data_struct*)data ) = *( (log_data_struct*)LQ_ptr->tail );
+
+			LQ_ptr->count-- ;
+		}
+		END_CRITICAL();
+
+
+		/*************sending data out to terminal************************/
+
+		return (CB_enum)Success ;
+	}
+	else return (CB_enum)Buffer_Empty ;
+
+}
+
+
+/*******************************************************************************
+@brief:Implements checking whether Logger buffer is full
+This function takes poiner tothe circulr buffer and checks for full state.
+@param:Pointer to LQ
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+__attribute__((always_inline)) __STATIC_INLINE CB_enum LQ_is_full(LQ_t*);
+
+//function definition as its inline
+CB_enum LQ_is_full(LQ_t* LQ_ptr){
+	if(LQ_ptr == NULL ) return (CB_enum)Argument_Error;
+	if(LQ_ptr->count >= LQ_ptr->size ) return (CB_enum)Buffer_Full;
+	return 0;
+}
+
+/*******************************************************************************
+@brief:Implements checking whether Logger buffer is Empty
+This function takes poiner tothe circulr buffer and checks for Empty state.
+@param:Pointer to LQ
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+__attribute__((always_inline)) __STATIC_INLINE CB_enum LQ_is_empty(LQ_t*);
+//function definition as its inline
+CB_enum LQ_is_empty(LQ_t* LQ_ptr){
+	if(LQ_ptr == NULL ) return (CB_enum)Argument_Error;
+	if(LQ_ptr->count == 0 ) return (CB_enum)Buffer_Empty;
+	return 0;
+};
+
+///*******************************************************************************
+//@brief:Implements seeking data in Logger buffer at particular location
+//This function takes pointer to a Logger buffer, and position from head to peek
+//into and  pointer where this data will be stored.
+//@param:Pointer to LQ,position from head to seek into, pointer to adress where
+//the data has to be stored.
+//@return:CB_enum enumaration that specifies success failure etc.
+//*******************************************************************************/
+//CB_enum LQ_peek(LQ_t* ,size_t, log_data_struct* );
+//
+
+
+/*******************************************************************************
+@brief:Implements initiatin a Logger buffer
+This function poiner to the circulr buffer and size to be reserved for the LQ
+in Bytes.
+@param:Pointer to LQ, size of buffer in bytes.
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum LQ_init(LQ_t* LQ_ptr , size_t LQ_size);
+
+
+
+/*******************************************************************************
+@brief:Implements destroying the Logger buffer
+This function takes pointer to the Logger buffer to be destroyed
+@param:Pointer to LQ
+@return:CB_enum enumaration that specifies success failure etc.
+ *******************************************************************************/
+CB_enum LQ_destroy(LQ_t* LQ_ptr);
+
+
+
+#endif /* SOURCE_LOGGER_QUE_H_ */
+/********************************************************************************
+@file:memory.h
+@brief:An abstraction for memory operations implemented in memory.c
+
+This file provides definitions for functions and external variables of file
+memory.c
+@author:Ravi Dubey
+@date:09/23/2017
+ *******************************************************************************/
+
+
+#ifndef FILE_MEMORY
+#define FILE_MEMORY
+
+#include <stdint.h>
+#include <stddef.h>
+
+
+/*******************************************************************************
+@brief:Moves data from source memory location to destination
+
+This function takes two byte pointers(src & dst) and a length of bytes to move
+ from the source location to the destination.
+@param:pointer to source memory, pointer to destination memory, length of data
+in bytes
+@return:pointer to destination memory.
+ *******************************************************************************/
+uint8_t* my_memmove(uint8_t*, uint8_t*, size_t);
+
+
+/*******************************************************************************
+@brief:Copies data from source memory location to destination
+
+This function takes two byte pointers(src & dst) and a length of bytes to copy
+from the source location to the destination.
+@param:pointer to source memory, pointer to destination memory, length of data
+in bytes
+@return:pointer to destination memory.
+ *******************************************************************************/
+uint8_t* my_memcopy(uint8_t*, uint8_t*, size_t);
+
+/*******************************************************************************
+@brief:Sets given value to the given memory locations
+
+This function takes a pointer to a source memory location, length in bytes and
+set all locations of that memory to the given value.
+@param:pointer to source memory, length of memory in bytes, value to be set
+@return:pointer to source memory.
+ *******************************************************************************/
+uint8_t* my_memset(uint8_t*, size_t , uint8_t);
+
+/*******************************************************************************
+@brief:Sets value zero to the given memory locations
+
+This function takes a pointer to a source memory location, length in bytes and
+set all locations of that memory to zero.
+@param:pointer to source memory,length of memory in bytes
+@return:pointer to source memory.
+ *******************************************************************************/
+uint8_t* my_memzero(uint8_t*, size_t );
+
+
+/*******************************************************************************
+@brief:Reverse the order of bytes at given memory locations
+
+This function takes a pointer to a source memory location, length in bytes and
+reverses the order of all of the bytes.
+@param:pointer to source memory,length of memory in bytes
+@return:pointer to source memory.
+ *******************************************************************************/
+uint8_t* my_reverse(uint8_t*, size_t );
+
+
+/*******************************************************************************
+@brief:reserve dynamic memory
+
+This function takes number of words to allocate in dynamic memory
+@param:length of memory in word(2 bytes)
+@return:pointer to memory allocated.
+ *******************************************************************************/
+int32_t* reserve_words(size_t );
+
+
+/*******************************************************************************
+@brief:deaalocate memory
+This function deallocates dynamic memory by providing pointer source to the
+function
+
+@param:pointer to memory
+@return:void
+ *******************************************************************************/
+void free_words(int32_t* );
+
+#endif
+/*
+ * nordic.h
+ *
+ *  Created on: Dec 6, 2017
+ *      Author: Ravi
+ */
+
+#ifndef SOURCE_NORDIC_H_
+#define SOURCE_NORDIC_H_
+
+#include<stdint.h>
+
+
+
+/* Instructions  */
+#define R_REGISTER    0x00
+#define W_REGISTER    0x20
+#define REGISTER_MASK 0x1F
+#define ACTIVATE      0x50
+#define R_RX_PL_WID   0x60
+#define R_RX_PAYLOAD  0x61
+#define W_TX_PAYLOAD  0xA0
+#define W_ACK_PAYLOAD 0xA8
+#define FLUSH_TX_FIFO 0xE1
+#define FLUSH_RX_FIFO 0xE2
+#define REUSE_TX_PL   0xE3
+#define NOP           0xFF
+
+/* Memory Map */
+#define CONFIG      0x00
+#define EN_AA       0x01
+#define EN_RXADDR   0x02
+#define SETUP_AW    0x03
+#define SETUP_RETR  0x04
+#define RF_CH       0x05
+#define RF_SETUP    0x06
+#define STATE       0x07
+#define OBSERVE_TX  0x08
+#define CD          0x09
+#define RX_ADDR_P0  0x0A
+#define RX_ADDR_P1  0x0B
+#define RX_ADDR_P2  0x0C
+#define RX_ADDR_P3  0x0D
+#define RX_ADDR_P4  0x0E
+#define RX_ADDR_P5  0x0F
+#define TX_ADDR     0x10
+#define RX_PW_P0    0x11
+#define RX_PW_P1    0x12
+#define RX_PW_P2    0x13
+#define RX_PW_P3    0x14
+#define RX_PW_P4    0x15
+#define RX_PW_P5    0x16
+#define FIFO_STATUS 0x17
+#define DYNPD	    0x1C
+#define FEATURE	    0x1D
+
+/* Bits  */
+#define MASK_RX_DR  6
+#define MASK_TX_DS  5
+#define MASK_MAX_RT 4
+#define EN_CRC      3
+#define CRCO        2
+#define PWR_UP      1
+#define PRIM_RX     0
+#define ENAA_P5     5
+#define ENAA_P4     4
+#define ENAA_P3     3
+#define ENAA_P2     2
+#define ENAA_P1     1
+#define ENAA_P0     0
+#define ERX_P5      5
+#define ERX_P4      4
+#define ERX_P3      3
+#define ERX_P2      2
+#define ERX_P1      1
+#define ERX_P0      0
+#define AW          0
+#define ARD         4
+#define ARC         0
+#define PLL_LOCK    4
+#define RF_DR       3
+#define RF_PWR      6
+#define RX_DR       6
+#define TX_DS       5
+#define MAX_RT      4
+#define RX_P_NO     1
+#define TX_FULL     0
+#define PLOS_CNT    4
+#define ARC_CNT     0
+#define TX_REUSE    6
+#define FIFO_FULL   5
+#define TX_EMPTY    4
+#define RX_FULL     1
+#define RX_EMPTY    0
+#define DPL_P5	    5
+#define DPL_P4	    4
+#define DPL_P3	    3
+#define DPL_P2	    2
+#define DPL_P1	    1
+#define DPL_P0	    0
+#define EN_DPL	    2
+#define EN_ACK_PAY  1
+#define EN_DYN_ACK  0
+
+
+/********************************************************************************
+@brief:Read the register and return the value
+
+Read the register and return the value
+@param:uit8_t register
+@return:int8_t
+ ********************************************************************************/
+uint8_t nrf_read_register(uint8_t);
+
+
+/********************************************************************************
+@brief:Write to the given register with the data
+
+Write to the given register with the data
+@param:uit8_t register,and the value to be written
+@return:none
+ ********************************************************************************/
+void nrf_write_register(uint8_t,uint8_t);
+
+
+/********************************************************************************
+@brief:Reads the STATUS register
+
+Reads the STATUS register
+@param:none
+@return:none
+ ********************************************************************************/
+uint8_t nrf_read_status();
+
+
+/********************************************************************************
+@brief:Write to CONFIG register
+
+Write to CONFIG register
+@param:config to be written
+@return:none
+ ********************************************************************************/
+void nrf_write_config(uint8_t);
+
+
+/********************************************************************************
+@brief:Read the CONFIG register
+
+Read the CONFIG register
+@param:none
+@return:none
+ ********************************************************************************/
+uint8_t nrf_read_config();
+
+
+/********************************************************************************
+@brief:Reads RF_SETUP register
+
+Reads RF_SETUP register
+@param:none
+@return:none
+ ********************************************************************************/
+uint8_t nrf_read_rf_setup();
+
+/********************************************************************************
+@brief:Writes to the RF_SETUP register
+
+Writes to the RF_SETUP register
+@param:config to be written
+@return:none
+ ********************************************************************************/
+void nrf_write_rf_setup(uint8_t);
+
+
+/********************************************************************************
+@brief:Reads RF_CH register
+
+Reads RF_CH register
+@param:none
+@return:none
+ ********************************************************************************/
+uint8_t nrf_read_rf_ch();
+
+
+/********************************************************************************
+@brief:Writes to the RF_CH register
+
+Writes to the RF_CH register
+@param:channel
+@return:none
+ ********************************************************************************/
+void nrf_write_rf_ch(uint8_t);
+
+
+/********************************************************************************
+@brief:Reads the 5bytes of the TX_ADDR register
+
+Reads the 5bytes of the TX_ADDR register
+@param:pointer to address
+@return:none
+ ********************************************************************************/
+void nrf_read_TX_ADDR(uint8_t*);
+
+
+/********************************************************************************
+@brief:Writes the 5byte TX_ADDR register
+
+Writes the 5byte TX_ADDR register
+@param:pointer to tx address
+@return:none
+ ********************************************************************************/
+void nrf_write_TX_ADDR(uint8_t*);
+
+
+/********************************************************************************
+@brief:Reads FIFO_STATUS register
+
+Reads FIFO_STATUS register
+@param:none
+@return:none
+ ********************************************************************************/
+uint8_t nrf_read_fifo_status();
+
+
+/********************************************************************************
+@brief:Sends the command FLUSH_TX
+
+Sends the command FLUSH_TX
+@param:none
+@return:none
+ ********************************************************************************/
+void nrf_flush_tx_fifo();
+
+
+/********************************************************************************
+@brief:Sends the command FLUSH_R
+
+Sends the command FLUSH_R
+@param:config to be written
+@return:none
+ ********************************************************************************/
+void nrf_flush_rx_fifo();
+
+
+
+#endif /* SOURCE_NORDIC_H_ */
+#ifndef project3_HEAD
+#define project3_HEAD
+
+
+#ifndef FRDM
+#include<time.h>
+#include"common.h"
+struct timespec start_time;
+struct timespec current_time;
+#endif
+
+#include<stdint.h>
+
+volatile uint32_t usec_count ;
+
+/********************************************************************************
+@brief:Reads get time in usec
+
+get time in usec
+@param:none
+@return:uint32_t
+ ********************************************************************************/
+
+__attribute__((always_inline)) static inline uint32_t get_precision_time(void);
+
+uint32_t get_precision_time(void){
+#ifdef FRDM
+	return usec_count;
+#endif
+
+#ifndef FRDM
+	clock_gettime(CLOCK_REALTIME,&start_time);
+	return (start_time.tv_sec *1000000 + start_time.tv_sec) ;
+#endif
+	return 1;
+}
+
+/********************************************************************************
+@brief:spinning delay in usec
+
+spinning delay in usec
+@param:none
+@return:none
+ ********************************************************************************/
+void delay_us(size_t );
+
+/********************************************************************************
+@brief:Configure Heartbeat
+
+configure RTC, Signal Handler based on Platform
+@param:none
+@return:none
+ ********************************************************************************/
+void HeartBeat_config(void);
+
+/********************************************************************************
+@brief:Configure clock
+@param:none
+@return:none
+ ********************************************************************************/
+void clock_configure(void);
+
+
+/********************************************************************************
+@brief:All operations related to project3
+@param:none
+@return:none
+ ********************************************************************************/
+void project_3(void);
+#endif
+/*
+ * RTC.h
+ *
+ *  Created on: Dec 2, 2017
+ *      Author: Ravi
+ */
+
+#ifndef SOURCE_RTC_H_
+#define SOURCE_RTC_H_
+
+
+volatile uint32_t RTC_sec_count;
+
+/*************************************************************************
+@brief:RTC configuration
+
+Configures the RTC
+@param:none
+@return:none
+*************************************************************************/
+void RTC_config(void);
+
+
+#endif /* SOURCE_RTC_H_ */
+/*
+ * spi.h
+ *
+ *  Created on: Dec 4, 2017
+ *      Author: Ravi
+ */
+
+#ifndef SOURCE_SPI_H_
+#define SOURCE_SPI_H_
+
+#include<stdlib.h>
+
+/********************************************************************************
+@brief:InitializestheSPIcontroller
+
+InitializestheSPIcontroller
+@param:NONE
+@return:NONE
+********************************************************************************/
+void SPI_init();
+
+/********************************************************************************
+@brief:Reads a single byte from the SPI bus
+
+Reads a single byte from the SPI
+bus@param:uint8_t type read byte
+@return:NONE
+********************************************************************************/
+void SPI_read_byte(uint8_t *byte);
+
+/********************************************************************************
+@brief:oSends a singlebyte on the SPI bus
+
+oSends a singlebyte on the SPI bus
+@param:uint8_t type byte to send
+@return:NONE
+********************************************************************************/
+void SPI_write_byte(uint8_t byte);
+
+
+/********************************************************************************
+@brief:write multiple data on SPI
+
+Sends numerous SPI Bytes given a pointer to a byte array and a length of how many
+bytes to send.
+@param:uint8_t* pointer to byte array and it's length
+@return:NONE
+********************************************************************************/
+void SPI_send_packet(uint8_t* p,size_t length);
+
+
+/********************************************************************************
+@brief:Writes out all data on the buffer on SPI
+
+Blocks until SPI transmit buffer has completed transmitting
+@param:NONE
+@return:NONE
+********************************************************************************/
+
+void SPI_flush();
+
+
+
+#endif /* SOURCE_SPI_H_ */
+
+
+#ifndef systick_header
+#define systick_header
+
+
+/********************************************************************************
+@brief:Confihures systick, used for precision timing
+
+Confihures systick, used for precision timing
+@param:none
+@return:none
+********************************************************************************/
+void Systick_config(void);
+
+#endif
+
+/*******************************************************************************
+@file:uart.h
+@brief:An abstraction for uart operations implemented in uart.c
+
+This file provides definitions for functions and external variables of file
+uart.c
+@author:Ravi Dubey
+@date:10/22/2017
+ *******************************************************************************/
+
+#include "circbuf.h"
+#include <stdlib.h>
+#include"common.h"
+
+#ifndef FILE_UART
+#define FILE_UART
+
+
+/*************************************************************************
+@brief:Configures UART to given settings
+
+This function configures UART to given settings, using predefined bitmasks
+and macros
+@param:none
+@return:return_enum
+ *************************************************************************/
+return_enum UART_configure();
+
+/*************************************************************************
+@brief:This​ function will send​ a​ single​ byte down​ a​ specific​​ UART device
+
+This​ function​ will​ send​ a ​single​ byte​ down​ a​ specific UART​ device.It takes
+pointer to data item to send.It blocks on already transmitting data.
+
+@param:pointer to data item to send
+@return:return_enum
+ *************************************************************************/
+return_enum UART_send(unsigned_byte*);
+
+/*************************************************************************
+@brief: This​ ​ function​ ​ will​ ​ send​s n​ bytes​ ​ down​ ​ a ​ ​ specific​ ​ UART​ ​ device
+
+This​ ​function​ ​will​ send n bytes​ down​​ a specific​ UART​ device. It takes pointer to data
+item to send & no. of items to send .It blocks on already transmitting data.
+@param:pointer to data item to send, no. of bytes to send
+@return: return_enum
+ ************************************************************************/
+return_enum UART_send_n(unsigned_byte*,size_t);
+
+/*************************************************************************
+@brief: This​ ​ function​ ​ returns a byte rxd from​ a​ specific​ ​ UART​ ​ device
+
+This​ ​ function​ ​ should​ ​ return​ ​ a ​ ​ received​ ​ byte​ ​ on​ ​ the​ ​ UART​ ​ using​ ​ an​ ​ input​ ​
+parameter​ ​ pointer.Blocks until the character has been rxd.
+@param:pointer to data item to send
+@return: return_enum
+ *************************************************************************/
+return_enum UART_receive(unsigned_byte*);
+
+/*************************************************************************
+@brief: This​ ​ function​ ​ returns n bytes rxd from​ a​ specific​ ​ UART​ ​ device
+
+This​ ​ function​ ​ should​ ​ return​ ​ received​ ​ byte​s ​ on​ ​ the​ ​ UART​ ​ using​ ​ an​ ​ input​ ​
+parameter​ ​ pointer.Blocks until the characters have been rxd.
+@param:pointer to data item to send, no. of bytes
+@return: return_enum
+ *************************************************************************/
+return_enum UART_receive_n(unsigned_byte*,size_t);
+
+
+/*************************************************************************
+@brief: This​ ​ function​ ​ is the IRQ handler for the UART
+
+This​ ​ function​ ​ is​ ​ the​ ​ IRQ​ ​ handler​ ​ for​ ​ the​ ​ UART. We​​ handle​ ​ two​ ​ types​ ​
+of interrupts​ ​ in​ ​ this​ ​ function - Receive​ ​ Interrupts & Transmit​ ​ interrupt.
+Each​ ​interrupt​ ​clears their​ associated flag​ when​ completed​ but​ only if​ ​ they​ ​
+were​ ​ set
+@param: none
+@return: void
+ *************************************************************************/
+void UART0_IRQHandler();
+
+#endif
