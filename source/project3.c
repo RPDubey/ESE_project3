@@ -353,13 +353,13 @@ void project_3(void){
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 	newline();
-
-#endif
-
-#ifndef FRDM
 	//disable systick used for profiling
 	SysTick->CTRL &= ~(1UL)  ;
 
+#endif
+
+#ifdef FRDM
+Systick_config();	
 #endif
 
 	//Non DMA based profiling for memmove - library version
@@ -604,10 +604,10 @@ void project_3(void){
 	data_log.time_sec = get_time();
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
-
+#ifdef FRDM
 	//disable systick used for profiling
 	SysTick->CTRL &= ~(1UL)  ;
-
+#endif
 
 
 
