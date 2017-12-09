@@ -7,12 +7,10 @@ This file declares functions for nordic library
 @author:Ravi Dubey
 @date:12/06/2017
  ********************************************************************************/
- #ifdef FRDM
  #include"nordic.h"
  #include"spi.h"
  #include"MKL25Z4.h"
- #endif
-
+#include"project3.h"
 
 
 #include<stdint.h>

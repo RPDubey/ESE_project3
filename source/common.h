@@ -12,6 +12,9 @@
 
 #define verbose
 
+#define FRDM
+
+
 //enum for return type of functions
 typedef enum{
   Pass,

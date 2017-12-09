@@ -19,7 +19,7 @@ This file declares functions for implementing operations defined in uart.h
 
 #include "circbuf.h"
 
-
+extern uint8_t verbose_flag;
 CB_t* command_CB;
 unsigned_byte newline[2] = "\r\n" ;
 

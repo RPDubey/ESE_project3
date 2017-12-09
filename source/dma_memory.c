@@ -8,10 +8,9 @@ to another
 @date:09/23/2017
 *******************************************************************************/
 
-#ifdef FRDM
-#include<MKL25Z4.h>
-#endif
 
+#include<MKL25Z4.h>
+#include"common.h"
 #include"dma_memory.h"
 #include<stdint.h>
 #include <stdint.h>

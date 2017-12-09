@@ -19,7 +19,7 @@ This file provides definitions for RTC related functions declared in RTC.h
 
 extern LQ_t* LQ_buf_ptr;
 extern LQ_t* HB_buf_ptr;
-
+extern uint8_t verbose_flag;
 log_data_struct heartbeat_data;
 uint8_t heartbeat_flag;
 
@@ -64,5 +64,11 @@ void RTC_Seconds_IRQHandler(void)
     heartbeat_data.time_sec = sec_count;
 
     //add data to a heartbeat buffer
-    LQ_buffer_add_item(HB_buf_ptr,heartbeat_data);//an inline function
+#ifdef verbose
+	if(verbose_flag == 1){
+    LOG_RAW_INT(heartbeat_data.ID);
+	LOG_RAW_INT(heartbeat_data.time_sec);
+	LOG_RAW_INT(heartbeat_data.log_length);
+	}
+#endif
 }

@@ -7,10 +7,8 @@ devices
 @author:Ravi Dubey
 @date:12/04/2017
 ********************************************************************************/
-#ifdef FRDM
 #include"MKL25Z4.h"
-#endif
-
+#include"common.h"
 #include"gpio.h"
 #include<stdint.h>
 void GPIO_nrf_init(void){
