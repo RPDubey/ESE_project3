@@ -35,7 +35,7 @@ compile-all:project3.elf
 project3.elf: $(OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: gcc'
-	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -o "project3.elf" $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -o "project3.elf" $(OBJS) -lrt
 	@echo 'Finished building target: $@'
 	@echo ' '
 
