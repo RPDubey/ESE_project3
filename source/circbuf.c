@@ -10,9 +10,12 @@ circbuf.h
 *******************************************************************************/
 
 # include <stdlib.h>
-# include "circbuf.h"
 # include <stdio.h>
+# include "circbuf.h"
 #include"common.h"
+
+#ifdef FRDM
+#endif
 
 CB_enum CB_init(CB_t* CB_ptr, size_t CB_size ){
 

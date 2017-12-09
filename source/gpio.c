@@ -7,11 +7,12 @@ devices
 @author:Ravi Dubey
 @date:12/04/2017
 ********************************************************************************/
+#ifdef FRDM
+#include"MKL25Z4.h"
+#endif
 
 #include"gpio.h"
 #include<stdint.h>
-#include"MKL25Z4.h"
-
 void GPIO_nrf_init(void){
 
 
@@ -40,5 +41,3 @@ void GPIO_nrf_init(void){
 
 
 }
-
-

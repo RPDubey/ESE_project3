@@ -10,25 +10,7 @@
 #include<stdlib.h>
 #include<stdint.h>
 
-#define FRDM
 #define verbose
-
-
-//#define nrf_transmit_enable()     __NOP  //GPIOC_PCOR |= (1UL<<9);
-//#define nrf_transmit_disable()		__NOP //GPIOC_PSOR |= (1UL<<9);
-
-#ifdef FRDM
-#define START_CRITICAL() __disable_irq()
-#define END_CRITICAL()  __enable_irq()
-#endif
-
-#ifdef BBB
-#define START_CRITICAL()  __NOP()
-#define END_CRITICAL __NOP()
-#endif
-
-uint8_t verbose_flag = 1;
-volatile uint32_t sec_count = 0;
 
 //enum for return type of functions
 typedef enum{
@@ -99,12 +81,6 @@ log_data_struct* buf_top_ptr; //points to the end of buffer in memory
 }LQ_t;
 
 
-void delay_us(size_t i){
-
-i = 48*i;
-while(i) i--;
-
-}
 
 
 

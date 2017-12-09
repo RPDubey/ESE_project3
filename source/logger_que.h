@@ -12,10 +12,28 @@ cirLQuf.c
 #ifndef SOURCE_LOGGER_QUE_H_
 #define SOURCE_LOGGER_QUE_H_
 
-#include<stdlib.h>
-
-#include"common.h"
+#ifdef FRDM
 #include"core_cm0plus.h"
+#endif
+
+#include<stdlib.h>
+#include"common.h"
+
+#ifndef FRDM
+#define __STATIC_INLINE static inline
+#endif
+
+#ifdef FRDM
+#define START_CRITICAL() __disable_irq()
+#define END_CRITICAL()  __enable_irq()
+#endif
+
+#ifndef FRDM
+#define START_CRITICAL()
+#define END_CRITICAL()
+#endif
+
+
 
 /*******************************************************************************
 @brief:Implements adding items to Logger buffer

@@ -7,10 +7,15 @@ This file declares functions for nordic library
 @author:Ravi Dubey
 @date:12/06/2017
  ********************************************************************************/
-#include"nordic.h"
+ #ifdef FRDM
+ #include"nordic.h"
+ #include"spi.h"
+ #include"MKL25Z4.h"
+ #endif
+
+
+
 #include<stdint.h>
-#include"spi.h"
-#include"MKL25Z4.h"
 #include"common.h"
 
 #define nrf_chip_enable()
@@ -183,6 +188,3 @@ void nrf_flush_rx_fifo(){
 
 
 }
-
-
-

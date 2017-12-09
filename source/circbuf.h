@@ -9,13 +9,14 @@ circbuf.c
 @date:10/21/2017
 *******************************************************************************/
 
-#include <stdint.h>
 
 #ifndef FILE_CIRCBUF
 #define FILE_CIRCBUF
 
-#include "common.h"
+#include <stdint.h>
 #include <stdlib.h>
+
+#include "common.h"
 #include"logger.h"
 
 
