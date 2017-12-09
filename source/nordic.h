@@ -109,7 +109,7 @@
 Read the register and return the value
 @param:uit8_t register
 @return:int8_t
-********************************************************************************/
+ ********************************************************************************/
 uint8_t nrf_read_register(uint8_t);
 
 
@@ -119,7 +119,7 @@ uint8_t nrf_read_register(uint8_t);
 Write to the given register with the data
 @param:uit8_t register,and the value to be written
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void nrf_write_register(uint8_t,uint8_t);
 
 
@@ -129,7 +129,7 @@ void nrf_write_register(uint8_t,uint8_t);
 Reads the STATUS register
 @param:none
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 uint8_t nrf_read_status();
 
 
@@ -139,7 +139,7 @@ uint8_t nrf_read_status();
 Write to CONFIG register
 @param:config to be written
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void nrf_write_config(uint8_t);
 
 
@@ -149,7 +149,7 @@ void nrf_write_config(uint8_t);
 Read the CONFIG register
 @param:none
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 uint8_t nrf_read_config();
 
 
@@ -159,7 +159,7 @@ uint8_t nrf_read_config();
 Reads RF_SETUP register
 @param:none
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 uint8_t nrf_read_rf_setup();
 
 /********************************************************************************
@@ -168,7 +168,7 @@ uint8_t nrf_read_rf_setup();
 Writes to the RF_SETUP register
 @param:config to be written
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void nrf_write_rf_setup(uint8_t);
 
 
@@ -178,7 +178,7 @@ void nrf_write_rf_setup(uint8_t);
 Reads RF_CH register
 @param:none
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 uint8_t nrf_read_rf_ch();
 
 
@@ -188,7 +188,7 @@ uint8_t nrf_read_rf_ch();
 Writes to the RF_CH register
 @param:channel
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void nrf_write_rf_ch(uint8_t);
 
 
@@ -198,7 +198,7 @@ void nrf_write_rf_ch(uint8_t);
 Reads the 5bytes of the TX_ADDR register
 @param:pointer to address
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void nrf_read_TX_ADDR(uint8_t*);
 
 
@@ -208,7 +208,7 @@ void nrf_read_TX_ADDR(uint8_t*);
 Writes the 5byte TX_ADDR register
 @param:pointer to tx address
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void nrf_write_TX_ADDR(uint8_t*);
 
 
@@ -218,7 +218,7 @@ void nrf_write_TX_ADDR(uint8_t*);
 Reads FIFO_STATUS register
 @param:none
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 uint8_t nrf_read_fifo_status();
 
 
@@ -228,7 +228,7 @@ uint8_t nrf_read_fifo_status();
 Sends the command FLUSH_TX
 @param:none
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void nrf_flush_tx_fifo();
 
 
@@ -238,7 +238,7 @@ void nrf_flush_tx_fifo();
 Sends the command FLUSH_R
 @param:config to be written
 @return:none
-********************************************************************************/
+ ********************************************************************************/
 void nrf_flush_rx_fifo();
 
 

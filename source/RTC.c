@@ -5,7 +5,7 @@
 This file provides definitions for RTC related functions declared in RTC.h
 @author:Ravi Dubey
 @date:12/2/2017
-*******************************************************************************/
+ *******************************************************************************/
 
 #include<MKL25Z4.h>
 
@@ -25,7 +25,7 @@ uint8_t heartbeat_flag;
 
 void RTC_config(void){
 
-	
+
 	NVIC_EnableIRQ(RTC_Seconds_IRQn );
 
 	SIM->SOPT1 |= (1UL<<18) | (1UL<<19) ; //select 1KHZ osc LPO for rtc counter
@@ -42,7 +42,7 @@ void RTC_config(void){
 	RTC_CR =  0X00000004;//NOn supervisor mode acces enabled. rest zero
 
 	RTC_TSR = 0x00000001;//Time seconds REgister.writing zero not recommended
-    RTC_TAR = 0x00000000;//TAR never equals TSR, hence alarm flag always clear
+	RTC_TAR = 0x00000000;//TAR never equals TSR, hence alarm flag always clear
 	RTC_TPR = 0x00007FFF- 999 ;//14th bit goes low on 1000th count,triggerring interrupt
 
 	RTC_IER = 0x00000010;//second interrupt enable
@@ -56,14 +56,14 @@ void RTC_Seconds_IRQHandler(void)
 	RTC_TPR = 0x00007FFF-999 ;
 	RTC_SR  |=(1UL<<4);   // enable counter
 	sec_count++;
-    heartbeat_data.time_sec = sec_count;
+	heartbeat_data.time_sec = sec_count;
 
-    //add data to a heartbeat buffer
+	//add data to a heartbeat buffer
 #ifdef verbose
 	if(verbose_flag == 1){
-    LOG_RAW_INT(heartbeat_data.ID);
-	LOG_RAW_INT(heartbeat_data.time_sec);
-	LOG_RAW_INT(heartbeat_data.log_length);
+		LOG_RAW_INT(heartbeat_data.ID);
+		LOG_RAW_INT(heartbeat_data.time_sec);
+		LOG_RAW_INT(heartbeat_data.log_length);
 	}
 #endif
 }

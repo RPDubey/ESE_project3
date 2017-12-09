@@ -14,6 +14,7 @@ This file declares functions for implementing operations defined in uart.h
 #include "fsl_debug_console.h"
 #include "board.h"
 #include "pin_mux.h"
+
 //#include "nvic.h"
 #define INT_UART0 28
 
@@ -110,7 +111,7 @@ void UART0_IRQHandler(){
 			CB_buffer_remove_item(command_CB,&pop);
 
 			if( (pop == 'o') && (data == 'n') ){
-				 verbose_flag = 1;
+				verbose_flag = 1;
 			}
 
 			if( (pop == 'o') && (data == 'f') ){

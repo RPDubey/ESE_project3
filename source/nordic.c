@@ -7,9 +7,9 @@ This file declares functions for nordic library
 @author:Ravi Dubey
 @date:12/06/2017
  ********************************************************************************/
- #include"nordic.h"
- #include"spi.h"
- #include"MKL25Z4.h"
+#include"nordic.h"
+#include"spi.h"
+#include"MKL25Z4.h"
 #include"project3.h"
 
 

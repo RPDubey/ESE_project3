@@ -7,6 +7,18 @@ This file initializes all the functionality for project3
 @date:12/1/2017
  *******************************************************************************/
 
+
+#include"memory.h"
+#include"circbuf.h"
+#include"logger_que.h"
+#include"common.h"
+#include"project3.h"
+
+#include<stdint.h>
+#include<stdlib.h>
+
+
+
 #ifdef FRDM
 #include"pin_mux.c"
 #include"clock_config.c"
@@ -19,6 +31,9 @@ This file initializes all the functionality for project3
 #include"nordic.h"
 #include"spi.h"
 #include"gpio.h"
+#include"nordic.h"
+
+#define newline()  LOG_RAW_STRING("\n\r");
 #endif
 
 #ifndef FRDM
@@ -27,19 +42,13 @@ This file initializes all the functionality for project3
 #include<string.h>
 #include<time.h>
 #include<signal.h>
+
+#define newline()  LOG_RAW_STRING("\n");
+
 #endif
 
 
 
-
-#include"memory.h"
-#include"circbuf.h"
-#include"logger_que.h"
-#include"common.h"
-#include"project3.h"
-
-#include<stdint.h>
-#include<stdlib.h>
 
 
 #define get_time() sec_count
@@ -48,7 +57,7 @@ This file initializes all the functionality for project3
 
 uint8_t verbose_flag ;
 volatile uint32_t sec_count;
-
+//extern volatile uint32_t usec_count ;
 
 
 //LQ_t*__attribute__((section (".buffer"))) LQ_buf_ptr;//Logger Que Buffer ptr
@@ -97,20 +106,20 @@ log_data_struct heartbeat_data;
 
 void handle(int sig) {
 
-signal(SIGALRM, SIG_IGN);        
-signal(SIGALRM,handle);
-alarm(1);
-sec_count++;
-heartbeat_data.time_sec = sec_count;
+	signal(SIGALRM, SIG_IGN);
+	signal(SIGALRM,handle);
+	alarm(1);
+	sec_count++;
+	heartbeat_data.time_sec = sec_count;
 
 
 
 #ifdef verbose
-if(verbose_flag == 1){
-LOG_RAW_STRING("\n");//curiously, logging dosent happen without this
-LOG_RAW_INT(heartbeat_data.ID);
-LOG_RAW_INT(heartbeat_data.time_sec);
-LOG_RAW_INT(heartbeat_data.log_length);}
+	if(verbose_flag == 1){
+		LOG_RAW_STRING("\n");//curiously, logging dosent happen without this
+		LOG_RAW_INT(heartbeat_data.ID);
+		LOG_RAW_INT(heartbeat_data.time_sec);
+		LOG_RAW_INT(heartbeat_data.log_length);}
 
 #endif
 
@@ -122,23 +131,23 @@ LOG_RAW_INT(heartbeat_data.log_length);}
 
 void HeartBeat_config(){
 
-//static payload for HEARBEAT
-heartbeat_data.ID = HEARTBEAT;
-heartbeat_data.log_length = 0;
-heartbeat_data.payload_start_ptr = NULL;
-heartbeat_data.checksum = 0;
+	//static payload for HEARBEAT
+	heartbeat_data.ID = HEARTBEAT;
+	heartbeat_data.log_length = 0;
+	heartbeat_data.payload_start_ptr = NULL;
+	heartbeat_data.checksum = 0;
 
 #ifdef FRDM
 
-RTC_config();
-delay_us(1000);
+	RTC_config();
+	delay_us(1000);
 
 #endif
 
 
 #ifndef FRDM
-signal(SIGALRM, handle);
-alarm(1);
+	signal(SIGALRM, handle);
+	alarm(1);
 
 #endif
 
@@ -149,11 +158,11 @@ alarm(1);
 /*****************************************************************************/
 void project_3(void){
 
-//LOG_RAW_STRING(welcome);
+	//LOG_RAW_STRING(welcome);
 
 	verbose_flag = 1;
 	sec_count = 0;
-//printf("Project3\n");
+	//printf("Project3\n");
 
 
 #ifdef FRDM
@@ -188,22 +197,21 @@ void project_3(void){
 	HeartBeat_config();
 
 
-printf("project3\n");
-LOG_RAW_STRING("\n");
+	//printf("project3\n");
 
 	data_log.ID = SYSTEM_INITIALIZED;
 	data_log.time_sec = get_time();
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 
 	//start profiling
 	data_log.ID = PROFILING_STARTED;
 	data_log.time_sec = get_time();
 	data_log.log_length = 0;
 	LOG_ITEM(&data_log,LQ_buf_ptr);
-LOG_RAW_STRING("\n");
+	newline();
 
 	//10 bytes
 	//memmove profiling
@@ -222,15 +230,16 @@ LOG_RAW_STRING("\n");
 	volatile uint32_t time_us = 0;
 
 
-//Profiling for FRDM
+	//Profiling for FRDM
 #ifdef FRDM
 
-//profiling variables
+	//profiling variables
 
-//start DMA version profiling section
+	//start DMA version profiling section
 
 	Systick_config();
 
+	newline();
 	len = 5000;
 	start_ticks = usec_count;
 	memmove_dma(source,dst,len);
@@ -244,6 +253,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+	newline();
 	len = 1000;
 	start_ticks = usec_count;
 	memmove_dma(source,dst,len);
@@ -257,6 +267,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+	newline();
 	len = 100;
 	start_ticks = usec_count;
 	memmove_dma(source,dst,len);
@@ -270,6 +281,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+	newline();
 	len = 10;
 	start_ticks = usec_count;
 	memmove_dma(source,dst,len);
@@ -283,6 +295,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+	newline();
 	//memset profiling
 	len = 5000;
 	start_ticks = usec_count;
@@ -290,6 +303,7 @@ LOG_RAW_STRING("\n");
 	end_ticks = usec_count;
 	time_us = end_ticks - start_ticks;
 
+
 	data_log.ID = PROFILING_RESULT ;
 	data_log.time_sec = get_time();
 	data_log.log_length = 4;
@@ -297,6 +311,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+	newline();
 	len = 1000;
 	start_ticks = usec_count;
 	memset_dma(dst,len,1);
@@ -310,6 +325,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+	newline();
 	len = 100;
 	start_ticks = usec_count;
 	memset_dma(dst,len,1);
@@ -323,6 +339,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
+	newline();
 	len = 10;
 	start_ticks = usec_count;
 	memset_dma(dst,len,1);
@@ -335,19 +352,19 @@ LOG_RAW_STRING("\n");
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
+	newline();
 
+#endif
 
-
-//disable systick used for profiling
+#ifndef FRDM
+	//disable systick used for profiling
 	SysTick->CTRL &= ~(1UL)  ;
 
 #endif
 
+	//Non DMA based profiling for memmove - library version
 
 
-//Non DMA based profiling for memmove - library version
-
-	
 	start_ticks = get_precision_time();
 	memmove(source,dst,len);
 	end_ticks = get_precision_time();
@@ -360,7 +377,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 
 	len = 1000;
 	start_ticks = get_precision_time();
@@ -375,7 +392,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 100;
 	start_ticks = get_precision_time();
 	memmove(source,dst,len);
@@ -389,7 +406,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 10;
 	start_ticks = get_precision_time();
 	memmove(source,dst,len);
@@ -403,7 +420,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	//memset profiling
 	len = 5000;
 	start_ticks = get_precision_time();
@@ -418,7 +435,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 1000;
 	start_ticks = get_precision_time();
 	memset(dst,len,1);
@@ -433,7 +450,7 @@ LOG_RAW_STRING("\n");
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 100;
 	start_ticks = get_precision_time();
 	memset(dst,len,1);
@@ -447,7 +464,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 10;
 	start_ticks = get_precision_time();
 	memset(dst,len,1);
@@ -460,12 +477,12 @@ LOG_RAW_STRING("\n");
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
-LOG_RAW_STRING("\n");
-
-	
+	newline();
 
 
-//Non DMA based profiling for memmove - my version
+
+
+	//Non DMA based profiling for memmove - my version
 
 
 	len = 5000;
@@ -481,7 +498,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 1000;
 	start_ticks = get_precision_time();
 	my_memmove(source,dst,len);
@@ -495,7 +512,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 100;
 	start_ticks = get_precision_time();
 	my_memmove(source,dst,len);
@@ -509,7 +526,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 10;
 	start_ticks = get_precision_time();
 	my_memmove(source,dst,len);
@@ -522,7 +539,7 @@ LOG_RAW_STRING("\n");
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
-LOG_RAW_STRING("\n");
+	newline();
 	//memset profiling
 
 
@@ -539,7 +556,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 1000;
 	start_ticks = get_precision_time();
 	my_memset(dst,len,1);
@@ -553,7 +570,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 100;
 	start_ticks = get_precision_time();
 	my_memset(dst,len,1);
@@ -567,7 +584,7 @@ LOG_RAW_STRING("\n");
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
 
-LOG_RAW_STRING("\n");
+	newline();
 	len = 10;
 	start_ticks = get_precision_time();
 	my_memset(dst,len,1);
@@ -580,13 +597,16 @@ LOG_RAW_STRING("\n");
 	data_log.payload_start_ptr = (uint8_t*)&time_us;
 	calc_checksum(&data_log);
 	LOG_ITEM(&data_log,LQ_buf_ptr);
-LOG_RAW_STRING("\n");
+	newline();
 
-//profiling completed
-data_log.ID = PROFILING_COMPLETED;
-data_log.time_sec = get_time();
-data_log.log_length = 0;
-LOG_ITEM(&data_log,LQ_buf_ptr);
+	//profiling completed
+	data_log.ID = PROFILING_COMPLETED;
+	data_log.time_sec = get_time();
+	data_log.log_length = 0;
+	LOG_ITEM(&data_log,LQ_buf_ptr);
+
+	//disable systick used for profiling
+	SysTick->CTRL &= ~(1UL)  ;
 
 
 

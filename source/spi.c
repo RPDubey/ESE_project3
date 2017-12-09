@@ -51,14 +51,14 @@ void SPI_init(){
 
 void SPI_read_byte(uint8_t* byte){
 	while( !(SPI0_S & SPI_S_SPRF_MASK) );
-    *byte = SPI0_D;
+	*byte = SPI0_D;
 
 }
 
 void SPI_write_byte(uint8_t byte){
 
-    while( !(SPI0_S & SPI_S_SPTEF_MASK)  );
-    	SPI0_D = byte;
+	while( !(SPI0_S & SPI_S_SPTEF_MASK)  );
+	SPI0_D = byte;
 
 }
 
@@ -68,7 +68,7 @@ void SPI_send_packet(uint8_t* p,size_t length){
 	for(size_t i = 0; i< length; i++){
 
 		while( !(SPI0_S & SPI_S_SPTEF_MASK)  );
-		    	SPI0_D = *(p+i);
+		SPI0_D = *(p+i);
 	}
 }
 

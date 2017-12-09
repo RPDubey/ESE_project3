@@ -31,7 +31,7 @@ return_enum log_data(unsigned_byte* src_ptr, size_t len){
 	return UART_send_n(src_ptr,len);
 #endif
 
-return 1;
+	return 1;
 }
 
 
@@ -51,7 +51,7 @@ return_enum log_string(char* string_ptr){
 	}
 	return ret_val;
 #endif
-return 1;
+	return 1;
 }
 
 
@@ -82,135 +82,135 @@ return_enum log_flush(LQ_t* LQ_buf_ptr){
 
 		switch( (data_flush->ID)  ){
 
-			case LOGGER_INITIALZED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
+		case LOGGER_INITIALZED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
 
-				break;
+			break;
 
-			case GPIO_INITIALZED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case GPIO_INITIALZED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
-			case SYSTEM_INITIALIZED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case SYSTEM_INITIALIZED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
-			case SYSTEM_HALTED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case SYSTEM_HALTED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
-			case INFO:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
-				LOG_RAW_INT(data_flush->checksum);
-				break;
+		case INFO:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
+			LOG_RAW_INT(data_flush->checksum);
+			break;
 
-			case WARNING:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
-				LOG_RAW_INT(data_flush->checksum);
-				break;
+		case WARNING:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
+			LOG_RAW_INT(data_flush->checksum);
+			break;
 
-			case ERROR:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
-				LOG_RAW_INT(data_flush->checksum);
-				break;
+		case ERROR:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_STRING((char*)data_flush->payload_start_ptr);
+			LOG_RAW_INT(data_flush->checksum);
+			break;
 
-			case PROFILING_STARTED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case PROFILING_STARTED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
-			case PROFILING_RESULT:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
-				LOG_RAW_INT(data_flush->checksum);
+		case PROFILING_RESULT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
 
-		        break;
+			break;
 
-			case PROFILING_COMPLETED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case PROFILING_COMPLETED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
-			case DATA_RECEIVED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case DATA_RECEIVED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
-			case DATA_ANALYSIS_STARTED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case DATA_ANALYSIS_STARTED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
-			case DATA_ALPHA_COUNT:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
-				LOG_RAW_INT(data_flush->checksum);
-				break;
+		case DATA_ALPHA_COUNT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+			break;
 
-			case DATA_NUMERIC_COUNT:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
-				LOG_RAW_INT(data_flush->checksum);
-				break;
+		case DATA_NUMERIC_COUNT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT(*((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+			break;
 
-			case DATA_PUNCTUATION_COUNT:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				LOG_RAW_INT( *((int*)data_flush->payload_start_ptr));
-				LOG_RAW_INT(data_flush->checksum);
-				break;
+		case DATA_PUNCTUATION_COUNT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT( *((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+			break;
 
-			case DATA_MISC_COUNT:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				LOG_RAW_INT( *((int*)data_flush->payload_start_ptr));
-				LOG_RAW_INT(data_flush->checksum);
-				break;
+		case DATA_MISC_COUNT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			LOG_RAW_INT( *((int*)data_flush->payload_start_ptr));
+			LOG_RAW_INT(data_flush->checksum);
+			break;
 
-			case DATA_ANALYSIS_COMPLETED:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case DATA_ANALYSIS_COMPLETED:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
-			case HEARTBEAT:
-				LOG_RAW_INT(data_flush->ID);
-				LOG_RAW_INT(data_flush->time_sec);
-				LOG_RAW_INT(data_flush->log_length);
-				break;
+		case HEARTBEAT:
+			LOG_RAW_INT(data_flush->ID);
+			LOG_RAW_INT(data_flush->time_sec);
+			LOG_RAW_INT(data_flush->log_length);
+			break;
 
 		}}
 
-return 0;
+	return 0;
 }
 
 
@@ -299,7 +299,7 @@ return_enum log_item(log_data_struct* data, LQ_t* Buffer){
 		LOG_RAW_INT(*((int*)data_out->payload_start_ptr));
 		LOG_RAW_INT(data_out->checksum);
 
-        break;
+		break;
 
 	case PROFILING_COMPLETED:
 		LOG_RAW_INT(data_out->ID);
@@ -368,7 +368,7 @@ return_enum log_item(log_data_struct* data, LQ_t* Buffer){
 	}
 
 #endif
-return 0;
+	return 0;
 }
 
 /****************Wrapper Functions*****************************/
@@ -425,21 +425,21 @@ return_enum LOG_RAW_INT(int digit){
 
 return_enum LOG_FLUSH(LQ_t* Buffer){
 #ifdef verbose
-if(verbose_flag==1) {
-return log_flush(Buffer);
+	if(verbose_flag==1) {
+		return log_flush(Buffer);
 
-}
+	}
 #endif
-return 1;
+	return 1;
 }
 
 
 CB_enum LOG_ITEM(log_data_struct* data , LQ_t* Buffer){
 #ifdef verbose
-if(verbose_flag==1) {
-return log_item(data,Buffer);
-}
+	if(verbose_flag==1) {
+		return log_item(data,Buffer);
+	}
 #endif
 
-return 1;
+	return 1;
 }
